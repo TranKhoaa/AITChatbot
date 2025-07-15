@@ -27,7 +27,6 @@ def create_token(
     user_data: dict,
     type: Token_type = "access",
     expiry: timedelta = None,
-    refresh: bool = False,
 ) -> str:
     payload = {}
 
@@ -38,11 +37,16 @@ def create_token(
         else datetime.now() + (expiry if expiry else REFRESH_DEFAULT_EXPIRE)
     )
     payload["jti"] = str(uuid.uuid4())  # Unique identifier for the token
-    payload["refresh"] = refresh
+    payload["type"] = type
 
-    token = jwt.encode(
-        payload=payload, key=Config.JWT_SECRET_KEY, algorithm=Config.JWT_ALGORITHM
-    )
+    if type == "access":
+        token = jwt.encode(
+            payload=payload, key=Config.JWT_SECRET_KEY, algorithm=Config.JWT_ALGORITHM
+        )
+    else:
+        token = jwt.encode(
+            payload=payload, key=Config.JWT_SECRET_KEY_REFRESH, algorithm=Config.JWT_ALGORITHM
+        )
 
     return token
 
