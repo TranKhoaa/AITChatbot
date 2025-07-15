@@ -1,10 +1,10 @@
 import { useState , React}  from "react";
-import Header from "../components/header";
+import Header from "../components/Header";
 import illustration from "../assets/illustration.svg"
 import circleUp from "../assets/vector_up.svg"
 import circleDown from "../assets/vector_down.svg"
-import hideIcon from "../assets/hide_icon.svg"
 import AuthLayout from "../layout/AuthLayout";
+import hideIcon from "../assets/hide_icon.svg"
 import { useNavigate } from "react-router-dom";
 
 function LoginPage() {

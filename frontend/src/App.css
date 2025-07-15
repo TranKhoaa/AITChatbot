@@ -4,14 +4,14 @@ html, body {
   margin: 0;
   padding: 0;
   /* height: 100%; */
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 .rectangle {
   background-color: #ffffff;
 }
-.container {
+/* .container {
   transform: rotate(10deg);
-}
+} */
 .rect1 { width: 100px; height: 100%;}
 .rect2 { width: 45%; height: 95%; }
 .rect3 { width: 100%; height: 70px; }
