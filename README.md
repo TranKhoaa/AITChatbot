@@ -1,7 +1,4 @@
-# Chatbot
-
-1. **Navigate to the frontend folder**:
-
+# AITChatbot
 ```bash
 cd frontend
 npm run dev
