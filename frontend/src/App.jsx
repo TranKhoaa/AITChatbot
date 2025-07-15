@@ -7,7 +7,7 @@ import AdminPage from './pages/adminPage';
 import UploadFiles from './components/UploadFiles';
 import Chat from './pages/Chat';
 import Sidebar from './components/Sidebar';
-import Header from './components/Header';
+import ChatHeader from './components/ChatHeader';
 import { useState } from 'react';
 const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -33,7 +33,7 @@ const App = () => {
         <Route path="/chat" element={
           <nav>
             <div className="">
-              <Header toggleSidebar={toggleSidebar} />
+              <ChatHeader toggleSidebar={toggleSidebar} />
             </div>
               <main className="flex top-16 h-fit bg-black">
                   <Sidebar isSidebarOpen={isSidebarOpen} />
