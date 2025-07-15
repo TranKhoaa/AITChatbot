@@ -51,11 +51,16 @@ def create_token(
     return token
 
 
-def decode_token(token: str) -> dict:
+def decode_token(token: str, type: Token_type = "access") -> dict:
     try:
-        token_data = jwt.decode(
-            jwt=token, key=Config.JWT_SECRET_KEY, algorithms=[Config.JWT_ALGORITHM]
-        )
+        if type == "access":
+            token_data = jwt.decode(
+                jwt=token, key=Config.JWT_SECRET_KEY, algorithms=[Config.JWT_ALGORITHM]
+            )
+        else:
+            token_data = jwt.decode(
+                jwt=token, key=Config.JWT_SECRET_KEY_REFRESH, algorithms=[Config.JWT_ALGORITHM]
+            )
 
         return token_data
     except jwt.PyJWTError as e:

@@ -87,7 +87,7 @@ async def login_user(
         status_code=status.HTTP_200_OK,
         content={
             "message": "User logged in successfully",
-            "user_id": str(user.id),
+            "id": str(user.id),
             "name": user.name,
             "access_token": access_token,
             "refresh_token": refresh_token,
@@ -120,7 +120,7 @@ async def login_admin(
         status_code=status.HTTP_200_OK,
         content={
             "message": "Admin logged in successfully",
-            "admin_id": str(admin.id),
+            "id": str(admin.id),
             "name": admin.name,
             "access_token": access_token,
             "refresh_token": refresh_token,
