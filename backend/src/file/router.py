@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi.responses import FileResponse
 from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from .dependency import validate_file
@@ -10,6 +11,7 @@ from src.file.model import File
 from sqlmodel import select
 from src.shared.schema import FileSchemaWithAdmin
 from typing import List
+import uuid
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB limit
 UPLOAD_DIR = os.path.expanduser("./uploads")
@@ -53,7 +55,7 @@ async def upload_files(
 
             file_metadata = File(
                 name=file.filename,
-                link="",
+                link=full_path,
                 type=filecontent_type,
                 uploaded_by=admin_detail["data"]["id"],
                 chunks=[],
@@ -80,3 +82,19 @@ async def list_files(session: AsyncSession = Depends(get_session)):
     print(f"Files in database: {files_all}")
     print(files_all[0].admin)
     return files_all
+
+
+@file_router.get("/download/{file_id}")
+async def download_file(file_id: uuid.UUID, session: AsyncSession = Depends(get_session)):
+    """Download a file by its ID."""
+
+    statement = select(File).where(File.id == file_id)
+    file_metadata = await session.exec(statement)
+    file_metadata = file_metadata.first()
+    if not file_metadata or not os.path.exists(file_metadata.link):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(
+        path=file_metadata.link,
+        filename=os.path.basename(file_metadata.link),
+        media_type=file_metadata.type,
+    )
