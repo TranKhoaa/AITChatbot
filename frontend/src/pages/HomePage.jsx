@@ -29,7 +29,7 @@ function HomePage() {
                     </button>
                 </div>
             </div>
-            <div className="grid grid-cols-5 grid-rows-[1fr_auto_auto] w-full container">
+            <div className="grid grid-cols-5 grid-rows-[1fr_auto_auto] w-full rect-container">
                 <div className="row-span-3 rectangle rect1"></div>
                 <div className="col-span-4 grid grid-cols-4">
                     <div className="rectangle rect2"></div>

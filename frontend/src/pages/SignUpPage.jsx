@@ -18,7 +18,7 @@ function SignUpPage() {
     }
     return (
         <AuthLayout>
-                <div className="bg-white text-black px-20 py-14 w-[35%] flex flex-col justify-around rounded-2xl">
+                <div className="bg-white text-black px-24 py-28 w-[35%] flex flex-col gap-y-10 justify-around rounded-2xl">
                     <h2>Sign Up</h2>
                     <form>
                         <div className="input-block">

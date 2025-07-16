@@ -19,8 +19,8 @@ function LoginPage() {
     }
     return (
         <AuthLayout>
-                <div className="bg-white text-black px-20 py-14 w-[35%] flex flex-col justify-around rounded-2xl">
-                    <h2>Sign Up</h2>
+                <div className="bg-white text-black px-20 py-28 w-[35%] flex flex-col justify-around rounded-2xl">
+                    <h2>Log In</h2>
                     <form>
                         <div className="input-block">
                             <label className="text-slate-600 text-xl">User name/email address</label>
@@ -54,7 +54,7 @@ function LoginPage() {
                     </div>
 
                     <div className="flex flex-row gap-x-28 items-center">
-                        <button className="w-40 rounded-full h-14 bg-black hover:bg-slate-800 text-white text-xl">Sign up</button>
+                        <button className="w-40 rounded-full h-14 bg-black hover:bg-slate-800 text-white text-xl">Log In</button>
                         <span className="text-xl text-gray-700">Don’t have an account? <a href = "/signup" className="underline text-xl cursor-pointer">Sign up</a></span>
                     </div>
                 </div>
