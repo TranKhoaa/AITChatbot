@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, Link, Links } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import companyLogo from "../assets/company_logo.svg"
 import searchIcon from "../assets/search_icon.svg"
 function Header() {

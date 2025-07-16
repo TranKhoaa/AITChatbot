@@ -3,9 +3,19 @@ import { IoMdSettings } from 'react-icons/io';
 import { FiLogOut } from 'react-icons/fi';
 import { AiOutlineHistory, AiOutlineSearch } from 'react-icons/ai';
 import { HiOutlineDocumentText } from 'react-icons/hi';
-const Sidebar = ({ isSidebarOpen }) => {
+import "../App.css"
+import { useState } from 'react';
+import SettingsModal from './Settings';
+import { useNavigate} from "react-router-dom";
+const Sidebar = ({ isSidebarOpen, onOpenSettings }) => {
+  const chat_history = [
+    { id: "chat1", name: "grrr" },
+    { id: "chat2", name: "........"}
+  ];
+  const navigate = useNavigate()
   return (
-    <div className={`flex transition-transform ease-in-out duration-400 ${isSidebarOpen ? "w-90" : "w-0"}`}>
+    <div className={`flex transition-transform ease-in-out duration-400 ${isSidebarOpen ? "w-fit" : "w-0"}`}>
+    <div className="mx-auto w-fit min-w-64">
     {/* Sidebar */}
     <aside className="fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-black text-white sm:translate-x-0">
         {/* Search Bar */}
@@ -35,6 +45,7 @@ const Sidebar = ({ isSidebarOpen }) => {
             <a
             href="#"
             className="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg text-white hover:bg-gray-700 hover:text-white group transition-all duration-200"
+            onClick={() => navigate("/admin")}
             >
             <HiOutlineDocumentText className="h-5 w-5 mr-3" />
             File Management
@@ -53,16 +64,17 @@ const Sidebar = ({ isSidebarOpen }) => {
                     >
                         Today
                     </a>
-                    <button
-                        className="flex mt-4 items-center px-4 text-sm font-medium rounded-l text-gray-400 transition-all duration-200 w-full hover:text-white"
-                    >
-                        chat 1 grrrr
-                    </button>
-                    <button
-                        className="flex mt-4 items-center px-4 text-sm font-medium rounded-l text-gray-400 transition-all duration-200 w-full hover:text-white"
-                    >
-                        chat 1 grrrr
-                    </button>
+                    {/* Chat History */}
+                {chat_history.map((chat) => (
+                    <div key={chat.id}>
+                        <a />
+                        <button
+                            className="flex mt-4 items-center px-4 text-sm font-medium rounded-l text-gray-400 transition-all duration-200 w-full hover:text-white"
+                        >
+                            {chat.name}
+                        </button>
+                    </div>
+                ))}
                 </div>
             </div>
         </div>
@@ -79,13 +91,16 @@ const Sidebar = ({ isSidebarOpen }) => {
 
             <div className="w-64 h-10">
                 <div className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white group transition-all duration-200 bottom-2">
-                    <a className="flex items-center px-4 py-2.5 text-sm font-medium text-white duration-200">
+                    <button
+                    className="flex items-center px-4 py-2.5 text-sm font-medium text-white duration-200"
+                     onClick={() => onOpenSettings}>
                     <IoMdSettings className="h-5 w-5 mr-3"></IoMdSettings>Settings
-                    </a>
+                    </button>
                 </div>
             </div>
         </div>
     </aside>
+    </div>
     </div>
     );
 };
