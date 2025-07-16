@@ -5,6 +5,5 @@ import uuid
 class AdminSchema(BaseModel):
     id: uuid.UUID
     name: str
-    password: str
     created_at: datetime
     updated_at: datetime

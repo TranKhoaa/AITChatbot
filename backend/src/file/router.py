@@ -7,6 +7,8 @@ import os
 import aiofiles
 import mimetypes
 from src.file.model import File
+from sqlmodel import select
+from src.shared.schema import FileSchemaWithAdmin
 from typing import List
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB limit
@@ -65,3 +67,16 @@ async def upload_files(
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@file_router.get("/", response_model=List[FileSchemaWithAdmin])
+async def list_files(session: AsyncSession = Depends(get_session)):
+    """List all uploaded files."""
+
+    statement = select(File).order_by(File.name)
+
+    files = await session.exec(statement)
+    files_all = files.all()
+    print(f"Files in database: {files_all}")
+    print(files_all[0].admin)
+    return files_all
