@@ -75,12 +75,12 @@ async def login_user(
         )
 
     payload = {
-        "user_id": str(user.id),
+        "id": str(user.id),
         "name": user.name,
         "role": "user",
     }
-    access_token = create_token(user_data=payload, type="access")
-    refresh_token = create_token(user_data=payload, type="refresh")
+    access_token = create_token(data=payload, type="access")
+    refresh_token = create_token(data=payload, type="refresh")
 
     # Generate and return JWT token (not implemented in this snippet)
     return JSONResponse(
@@ -109,12 +109,12 @@ async def login_admin(
         )
 
     payload = {
-        "admin_id": str(admin.id),
+        "id": str(admin.id),
         "name": admin.name,
         "role": "admin",
     }
-    access_token = create_token(user_data=payload, type="access")
-    refresh_token = create_token(user_data=payload, type="refresh")
+    access_token = create_token(data=payload, type="access")
+    refresh_token = create_token(data=payload, type="refresh")
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
