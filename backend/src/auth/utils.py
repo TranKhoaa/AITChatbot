@@ -24,13 +24,13 @@ def verify_password(password: str, hash: str) -> bool:
 
 
 def create_token(
-    user_data: dict,
+    data: dict,
     type: Token_type = "access",
     expiry: timedelta = None,
 ) -> str:
     payload = {}
 
-    payload["user"] = user_data
+    payload["data"] = data
     payload["exp"] = (
         datetime.now() + (expiry if expiry else ACCESS_DEFAULT_EXPIRE)
         if type == "access"
