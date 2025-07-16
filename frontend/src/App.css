@@ -9,9 +9,9 @@ html, body {
 .rectangle {
   background-color: #ffffff;
 }
-/* .container {
+.rect-container {
   transform: rotate(10deg);
-} */
+}
 .rect1 { width: 100px; height: 100%;}
 .rect2 { width: 45%; height: 95%; }
 .rect3 { width: 100%; height: 70px; }
