@@ -39,8 +39,8 @@ class TokenBearer(HTTPBearer):
 
         return payload
 
-def AccessTokenBearer(payload: dict = Depends(TokenBearer(type="access"))):
-    if payload["type"] != "access":
+def AccessTokenBearerUser(payload: dict = Depends(TokenBearer(type="access"))):
+    if payload["type"] != "access" or payload['data']["role"] != "user":
         raise HTTPException(
             status_code=403,
             detail="Access token required",
@@ -48,8 +48,26 @@ def AccessTokenBearer(payload: dict = Depends(TokenBearer(type="access"))):
         )
     return payload
 
-def RefreshTokenBearer(payload: dict = Depends(TokenBearer(type="refresh"))):
-    if payload["type"] != "refresh":
+def RefreshTokenBearerUser(payload: dict = Depends(TokenBearer(type="refresh"))):
+    if payload["type"] != "refresh" or payload['data']["role"] != "user":
+        raise HTTPException(
+            status_code=403,
+            detail="Refresh token required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return payload
+
+def AccessTokenBearerAdmin(payload: dict = Depends(TokenBearer(type="access"))):
+    if payload["type"] != "access" or payload['data']["role"] != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Access token required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return payload
+
+def RefreshTokenBearerAdmin(payload: dict = Depends(TokenBearer(type="refresh"))):
+    if payload["type"] != "refresh" or payload['data']["role"] != "admin":
         raise HTTPException(
             status_code=403,
             detail="Refresh token required",
