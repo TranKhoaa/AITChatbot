@@ -84,7 +84,7 @@ async def list_files(session: AsyncSession = Depends(get_session)):
     return files_all
 
 
-@file_router.get("/download/{file_id}")
+@file_router.get("/{file_id}")
 async def download_file(file_id: uuid.UUID, session: AsyncSession = Depends(get_session)):
     """Download a file by its ID."""
 
