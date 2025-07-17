@@ -6,12 +6,22 @@ import circleDown from "../assets/vector_down.svg";
 import hideIcon from "../assets/hide_icon.svg";
 import AuthLayout from "../layout/AuthLayout";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { setCredentials, setError } from "../features/auth/authSlice";
+import { signupUser, signupAdmin } from "../features/auth/authAPI";
+
 function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  // For redux
+  const [username, setUsername] = useState("");
+  // const [email, setEmail] = useState("");
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { error } = useSelector((state) => state.auth);
 
   const togglePass = (e) => {
     e.preventDefault();
@@ -23,17 +33,34 @@ function SignUpPage() {
     setShowConfirmPassword(!showConfirmPassword);
   };
 
-  const navigate = useNavigate;
   const handleClick = () => {
     navigate("/login");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (password != confirmPassword) {
       setPasswordError("Password do not match, please enter again");
-    } else {
-      setPasswordError("");
+      return;
+    }
+    setPasswordError("");
+    const credentials = { name: username, password };
+    const isAdminSignup = username.toLowerCase().includes("admin");
+    try {
+      const response = isAdminSignup
+        ? await signupAdmin(credentials)
+        : await signupUser(credentials);
+      dispatch(
+        setCredentials({
+          id: response.user_id || response.admin_id,
+          name: response.name,
+          access_token: response.access_token,
+          refresh_token: response.refresh_token,
+        })
+      );
+      navigate("/chat");
+    } catch (err) {
+      dispatch(setError(err));
     }
   };
 
@@ -46,6 +73,8 @@ function SignUpPage() {
             <label className="text-slate-600 text-xl">User name</label>
             <input
               type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="input-text focus:border-slate-700 focus:outline-none"
             />
           </div>
@@ -99,50 +128,50 @@ function SignUpPage() {
               <label className="text-red-500 text-xl">{passwordError}</label>
             )}
           </div>
-        
-        <div className="flex flex-col gap-y-5">
-          <label class="inline-flex items-start">
-            <input
-              type="checkbox"
-              className=" text-slate-900 mt-2 cursor-pointer"
-            />
-            <span class="ml-2 text-gray-700 text-xl">
-              By creating an account, I agree to our{" "}
-              <span className="font-bold underline text-xl cursor-pointer">
-                Terms of use
-              </span>{" "}
-              and{" "}
-              <span className="font-bold underline text-xl cursor-pointer">
-                Privacy Policy
+
+          <div className="flex flex-col gap-y-5">
+            <label class="inline-flex items-start">
+              <input
+                type="checkbox"
+                className=" text-slate-900 mt-2 cursor-pointer"
+              />
+              <span class="ml-2 text-gray-700 text-xl">
+                By creating an account, I agree to our{" "}
+                <span className="font-bold underline text-xl cursor-pointer">
+                  Terms of use
+                </span>{" "}
+                and{" "}
+                <span className="font-bold underline text-xl cursor-pointer">
+                  Privacy Policy
+                </span>
               </span>
+            </label>
+            <label class="inline-flex items-start">
+              <input
+                type="checkbox"
+                className=" text-slate-900 mt-2 cursor-pointer"
+              />
+              <span class="ml-2 text-gray-700 text-xl">
+                By creating an account, I am also consenting to receive SMS
+                messages and emails, including product new feature updates,
+                events, and marketing promotions.
+              </span>
+            </label>
+          </div>
+          <div className="flex flex-row gap-x-28 items-center">
+            <button
+              type="submit"
+              className="w-40 rounded-full h-14 bg-black hover:bg-slate-800 text-white text-xl"
+            >
+              Sign up
+            </button>
+            <span className="text-xl text-gray-700">
+              Already have an account?{" "}
+              <a href="/login" className="underline text-xl cursor-pointer">
+                Log in
+              </a>
             </span>
-          </label>
-          <label class="inline-flex items-start">
-            <input
-              type="checkbox"
-              className=" text-slate-900 mt-2 cursor-pointer"
-            />
-            <span class="ml-2 text-gray-700 text-xl">
-              By creating an account, I am also consenting to receive SMS
-              messages and emails, including product new feature updates,
-              events, and marketing promotions.
-            </span>
-          </label>
-        </div>
-        <div className="flex flex-row gap-x-28 items-center">
-          <button
-            type="submit"
-            className="w-40 rounded-full h-14 bg-black hover:bg-slate-800 text-white text-xl"
-          >
-            Sign up
-          </button> 
-          <span className="text-xl text-gray-700">
-            Already have an account?{" "}
-            <a href="/login" className="underline text-xl cursor-pointer">
-              Log in
-            </a>
-          </span>
-        </div>
+          </div>
         </form>
       </div>
     </AuthLayout>

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-# from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from src.auth.router import auth_router
 from src.file.router import file_router
 
@@ -13,14 +13,16 @@ version = "v1"
 app = FastAPI(
     version=version,
 )
-
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins='http://127.0.0.1:5500/',
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+origins = [
+    "http://localhost:5173",
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # hello world endpoint
