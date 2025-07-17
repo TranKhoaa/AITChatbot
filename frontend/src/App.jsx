@@ -14,6 +14,9 @@ import SettingsModal from './components/Settings';
 import 'react-toastify/dist/ReactToastify.css';
 import { useState } from 'react';
 import { ToastContainer } from 'react-toastify';
+import store from './app/store';
+import { Provider } from 'react-redux'
+
 const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -21,6 +24,7 @@ const App = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
   return (
+    <Provider store={store}>
     <div>
       <Router>
         <Routes>
@@ -69,6 +73,7 @@ const App = () => {
         theme="dark"
       />
     </div>
+    </Provider>
   )
 }
 
