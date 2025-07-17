@@ -3,6 +3,8 @@ import { BsFillSendFill} from 'react-icons/bs';
 import { MdContentCopy } from 'react-icons/md';
 import { LuRefreshCcw, LuSquarePen } from 'react-icons/lu';
 import { FaChevronDown } from "react-icons/fa";
+import { toast, ToastContainer } from 'react-toastify';
+import "react-toastify/dist/ReactToastify.css";
 
 const Chat = () => {
   const [message, setMessage] = useState("");
@@ -18,7 +20,7 @@ const Chat = () => {
       content: "Hello! I understand you're working on a chatbot RAG application for internal company use, split into three modules: frontend, backend, and LLMs, with specific requirements for each. Below, I'll provide detailed requirements and backlogs for each module based on your specifications: a frontend with user and admin interfaces, a backend handling the RAG workflow with PostgreSQL, and an LLM module supporting English and Japanese document processing with Vietnamese responses."
     },
   ]);
-      const AI_MODELS = [
+  const AI_MODELS = [
     { id: "qwen3", name: "Qwen3" },
     { id: "gpt4", name: "GPT-4"},
     { id: "claude3", name: "Claude 3"},
@@ -73,10 +75,8 @@ const Chat = () => {
 
   return (
     <div className="isolate bg-black top-16 w-full h-full">
-      {/* Main Container */}
-      <div className="flex relative z-10">
         {/* Chat Area */}
-        <div className="flex-1 h-[calc(100vh-4rem)] flex flex-col perspective-card justify-center mx-auto max-w-4xl">
+        <div className="flex-1 h-[calc(100vh-4rem)] flex flex-col justify-center mx-auto max-w-4xl min-w-100">
           <div className="card-3d flex flex-col h-full">
             {/* Messages Area */}
             <div
@@ -103,7 +103,7 @@ const Chat = () => {
                               <MdContentCopy className='h-4 w-4'/>
                             </button>
                             <button className='hover:text-gray-400  text-white'>
-                            <LuSquarePen className='h-4 w-4'/>
+                              <LuSquarePen className='h-4 w-4'/>
                             </button>
                           </p>
                         </div>
@@ -124,7 +124,7 @@ const Chat = () => {
                            ><MdContentCopy className='h-4 w-4'/>
                             </button>
                             <button className='hover:text-gray-400  text-white'>
-                            <LuRefreshCcw className='h-4 w-4'/>
+                              <LuRefreshCcw className='h-4 w-4'/>
                             </button>
                           </p>
                         </div>
@@ -138,12 +138,19 @@ const Chat = () => {
             </div>
             {/* Chat Input */}
               <div className="relative grid-rows-2 grid grid-flow-col w-150 self-center m-4 bg-gray-800 rounded-xl p-4 max-w-4xl items-center">
-                <input
+                <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyDown={handleKeyPress}
                   placeholder="Ask anything..."
-                  className="bg-transparent border-none text-white placeholder:text-white/40 focus:ring-hidden outline-none"
+                  rows={1}
+                  style={{
+                    resize: "none",
+                    minHeight: "40px",
+                    maxHeight: "120px",
+                    overflowY: "auto"
+                  }}
+                  className="bg-transparent border-none text-white placeholder:text-white/40 focus:ring-hidden outline-none w-full custom-scrollbar"
                 />
                 <div className="relative">
                   <div className="items-center gap-2 p-1">
@@ -181,12 +188,11 @@ const Chat = () => {
                   className="row-span-2 p-2 absolute top-1/2 right-5 place-self-center justify-end text-white transform -translate-y-1/2 hover:bg-gray-600 rounded-full transition-colors"
                   onClick={handleSendMessage}
                 >
-                  <BsFillSendFill />
+                  <BsFillSendFill className="h-5 w-5" />
                 </button>
               </div>
           </div>
         </div>
-      </div>
     </div>
   );
 };

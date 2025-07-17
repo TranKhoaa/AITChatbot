@@ -99,7 +99,7 @@ export default function UploadFile() {
                   ) : (
                     <FaFolder className="text-yellow-500 mr-1" />
                   )}
-                  <span className="font-semibold">{key}</span>
+                  <a className="font-semibold">{key}</a>
                   <button
                     onClick={() => handleDeleteFolder(currentPath)}
                     className="ml-2 invisible group-hover:visible text-red-600 hover:text-red-800"
@@ -116,7 +116,7 @@ export default function UploadFile() {
           return (
             <li key={currentPath} className="flex items-center group ml-6">
               <FaFile className="text-gray-500 mr-1" />
-              <span>{key}</span>
+              <a>{key}</a>
               <button
                 onClick={() => handleDeleteFile(value)}
                 className="ml-2 invisible group-hover:visible text-red-600 hover:text-red-800"
