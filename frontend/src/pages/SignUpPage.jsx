@@ -16,9 +16,13 @@ function SignUpPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+
+  const [usernameError, setUsernameError] = useState("");
+  const [missingPasswordError, setMissingPasswordError] = useState("");
+  const [missingConfirmError, setMissingConfirmError] = useState("");
   // For redux
   const [username, setUsername] = useState("");
-  // const [email, setEmail] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { error } = useSelector((state) => state.auth);
@@ -39,15 +43,34 @@ function SignUpPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    let hasError = false;
+    setUsernameError("")
+    setMissingPasswordError("")
+    setMissingConfirmError("")
+
+    if (!username.trim()) {
+      setUsernameError("Please fill out this field");
+      hasError = true;
+    } if (!password.trim()) {
+      setMissingPasswordError("Please fill out this field");
+      hasError = true;
+    } if (!confirmPassword.trim()) {
+      setMissingConfirmError("Please fill out this field");
+      hasError = true;
+    }
+
+    if(hasError) return;
+    
+
     if (password != confirmPassword) {
       setPasswordError("Password do not match, please enter again");
       return;
     }
     setPasswordError("");
     const credentials = { name: username, password };
-    const isAdminSignup = username.toLowerCase().includes("admin");
     try {
-      const response = isAdminSignup
+      const response = isAdmin
         ? await signupAdmin(credentials)
         : await signupUser(credentials);
       dispatch(
@@ -75,14 +98,22 @@ function SignUpPage() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="input-text focus:border-slate-700 focus:outline-none"
+              className={`input-text focus:outline-none ${
+                usernameError
+                  ? "border border-red-500 focus:border-red-500 "
+                  : "border border-slate-300 focus:border-slate-500  "
+              }`}
             />
+            {usernameError && (
+                <p className="my-1 text-red-500">{usernameError}</p>
+              )}
           </div>
           <div className="input-block">
             <label className="text-slate-600 text-xl">Email address</label>
             <input
               type="text"
-              className="input-text focus:border-slate-700 focus:outline-none"
+              className="input-text focus:outline-none  border border-slate-300 focus:border-slate-500  "
+              
             />
           </div>
           <div className="input-block">
@@ -97,10 +128,17 @@ function SignUpPage() {
             </div>
             <input
               type={showPassword ? "text" : "password"}
-              className="input-text focus:border-slate-700 focus:outline-none"
+              className={`input-text focus:outline-none ${
+                missingPasswordError
+                  ? "border border-red-500 focus:border-red-500 "
+                  : "border border-slate-300 focus:border-slate-500  "
+              }`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            {missingPasswordError && (
+                <p className="my-1 text-red-500">{missingPasswordError}</p>
+              )}
             <label className="text-slate-600 text-lg cursor-pointer">
               Use 8 or more characters with a mix of letters, numbers & symbols
             </label>
@@ -120,20 +158,35 @@ function SignUpPage() {
             </div>
             <input
               type={showConfirmPassword ? "text" : "password"}
-              className="input-text focus:border-slate-700 focus:outline-none"
+              className={`input-text focus:outline-none ${
+                missingConfirmError
+                  ? "border border-red-500 focus:border-red-500 "
+                  : "border border-slate-300 focus:border-slate-500  "
+              }`}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
-            {passwordError && (
-              <label className="text-red-500 text-xl">{passwordError}</label>
-            )}
+            {missingConfirmError && (
+                <p className="my-1 text-red-500">{missingConfirmError}</p>
+              )}
           </div>
 
           <div className="flex flex-col gap-y-5">
-            <label class="inline-flex items-start">
+          <label class="items-start ">
               <input
                 type="checkbox"
-                className=" text-slate-900 mt-2 cursor-pointer"
+                className=" text-slate-900 mt-2 w-4 h-4 cursor-pointer"
+                checked={isAdmin}
+                onChange={(e) => setIsAdmin(e.target.checked)}
+              />
+              <span class="ml-2 text-gray-700 text-xl">
+                Sign up as admin
+              </span>
+            </label>
+            <label class="items-start">
+              <input
+                type="checkbox"
+                className=" text-slate-900 mt-2 w-4 h-4 cursor-pointer"
               />
               <span class="ml-2 text-gray-700 text-xl">
                 By creating an account, I agree to our{" "}
@@ -146,10 +199,10 @@ function SignUpPage() {
                 </span>
               </span>
             </label>
-            <label class="inline-flex items-start">
+            <label class=" items-start">
               <input
                 type="checkbox"
-                className=" text-slate-900 mt-2 cursor-pointer"
+                className=" text-slate-900 mt-2 w-4 h-4 cursor-pointer"
               />
               <span class="ml-2 text-gray-700 text-xl">
                 By creating an account, I am also consenting to receive SMS
