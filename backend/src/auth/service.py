@@ -25,7 +25,7 @@ class AuthService:
         return True if user is not None else False
 
     async def admin_exists(self, name, session: AsyncSession):
-        admin = await self.get_user_by_name(name, session)
+        admin = await self.get_admin_by_name(name, session)
         return True if admin is not None else False
 
     async def create_user(self, user_data: UserCreateSchema, session: AsyncSession):
