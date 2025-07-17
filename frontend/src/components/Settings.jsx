@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { FaTimes, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { AiOutlineClose } from 'react-icons/ai';
 
 export default function SettingsModal({ onClose }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -12,7 +13,7 @@ export default function SettingsModal({ onClose }) {
   );
 
   return (
-      <div className="h-150 w-200 fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 place-self-center-safe bg-[#2c2f36] text-white rounded-xl shadow-lg max-w-2xl p-6">
+      <div className="h-150 w-200 z-50 fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white rounded-xl shadow-lg max-w-2xl p-6">
         {/* Header */}
         <div className="px-4 flex justify-between items-center border-b border-gray-700 pb-4 mb-4">
           <h2 className="text-xl font-semibold">Settings</h2>
@@ -21,7 +22,7 @@ export default function SettingsModal({ onClose }) {
             className="text-gray-400 hover:text-white"
             title="Close"
           >
-            <FaTimes size={20} />
+            <AiOutlineClose className="h-6 w-6" />
           </button>
         </div>
 
