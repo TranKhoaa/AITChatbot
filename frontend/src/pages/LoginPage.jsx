@@ -51,6 +51,7 @@ function LoginPage() {
       const response = isAdmin
         ? await loginAdmin(credentials)
         : await loginUser(credentials);
+        console.log("Login response: ", response);
       dispatch(
         setCredentials({
           id: response.id,
