@@ -12,7 +12,7 @@ html, body {
 .rect-container {
   transform: rotate(10deg);
 }
-.rect1 { width: 100px; height: 100%;}
+.rect1 { width: 40%; height: 100%;}
 .rect2 { width: 45%; height: 95%; }
 .rect3 { width: 100%; height: 70px; }
 
@@ -21,7 +21,7 @@ html, body {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-20px);
   }
 }
 
@@ -34,6 +34,14 @@ html, body {
   }
 }
 
+@media screen and (max-width: 768px) {
+  .floating-logo {
+    animation: floatUpDown 3s ease-in-out infinite;
+  }
+  .rect1 { width: 100px; height: 100%;}
+  .rect2 { width: 45%; height: 80%; }
+  .rect3 { width: 100%; height: 50px; }
+}
 .rect1,
 .rect2 {
   animation: floatUpDown 2s ease-in-out infinite;
@@ -60,12 +68,26 @@ html, body {
 
 .input-text{
   width: 100%;
-  padding: 12px 20px;
+  padding: 6px 14px;
   margin: 8px 0;
   display: inline-block;
   /* border: 1px solid #ccc; */
   border-radius: 10px;
   /* box-sizing: border-box; */
+}
+@media screen and (max-width: 768px) {
+  .input-text {
+    padding: 5px;
+    margin: 0px;
+    font-size: 1rem;
+  }
+}
+@media screen and (max-width: 1024px) {
+  .input-text {
+    padding: 7px;
+    margin: 0px;
+    font-size: 1rem;
+  }
 }
 .circle-container {
   position: relative;

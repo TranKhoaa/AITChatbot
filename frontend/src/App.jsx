@@ -1,3 +1,4 @@
+
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
@@ -19,6 +20,7 @@ import UnauthorizedPage from './pages/UnauthorizedPage';
 
 import AdminRoute from './routes/AdminRoute';
 import PrivateRoute from './routes/PrivateRoute';
+
 
 const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -74,6 +76,7 @@ const App = () => {
           <Route path="/settings" element={<Settings />} />
         </Routes>
 
+
         <ToastContainer
           position="top-right"
           autoClose={2000}
@@ -87,6 +90,7 @@ const App = () => {
           theme="dark"
         />
       </Router>
+
     </Provider>
   );
 };
