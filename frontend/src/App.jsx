@@ -1,21 +1,27 @@
-import { BrowserRouter as Router, Routes, Route, BrowserRouter, Link } from 'react-router-dom';
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import SignUpPage from './pages/SignUpPage';
-import FileManagement from './components/FileManagement';
-import AdminPage from './pages/adminPage';
-import UploadFiles from './components/UploadFiles';
-import Chat from './pages/Chat';
-import ChatSidebar from './components/ChatSidebar';
-import sidebar from './components/sidebar';
-import ChatHeader from './components/ChatHeader';
-import Settings from './components/Settings';
-import SettingsModal from './components/Settings';
-import 'react-toastify/dist/ReactToastify.css';
-import { useState } from 'react';
-import { ToastContainer } from 'react-toastify';
-import store from './app/store';
-import { Provider } from 'react-redux'
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  BrowserRouter,
+  Link,
+} from "react-router-dom";
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
+import SignUpPage from "./pages/SignUpPage";
+import FileManagement from "./components/FileManagement";
+import AdminPage from "./pages/adminPage";
+import UploadFiles from "./components/UploadFiles";
+import Chat from "./pages/Chat";
+import ChatSidebar from "./components/ChatSidebar";
+import sidebar from "./components/sidebar";
+import ChatHeader from "./components/ChatHeader";
+import Settings from "./components/Settings";
+import SettingsModal from "./components/Settings";
+import "react-toastify/dist/ReactToastify.css";
+import { useState } from "react";
+import { ToastContainer } from "react-toastify";
+import store from "./app/store";
+import { Provider } from "react-redux";
 
 const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -25,56 +31,61 @@ const App = () => {
   };
   return (
     <Provider store={store}>
-    <div>
-      <Router>
-        <Routes>
-          <Route path='/' element={<HomePage />} />
-          <Route path='/login' element={<LoginPage />} />
-          <Route path='/signup' element={<SignUpPage />} />
-          <Route path='/admin/*' element={<AdminPage />} />
+      <div>
+        <Router>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignUpPage />} />
+            <Route path="/admin/*" element={<AdminPage />} />
 
-          <Route path='/settings' element={<Settings />} />
+            <Route path="/settings" element={<Settings />} />
 
-          <Route path="/test" element={
-            <nav className="">
-              <UploadFiles />
-            </nav>} />
-          <Route path="/chat" element={
-            <nav>
-              <div className="">
-                <ChatHeader toggleSidebar={toggleSidebar} />
-              </div>
-              <main className="flex top-16 h-fit bg-black">
-                <ChatSidebar
-                  isSidebarOpen={isSidebarOpen}
-                  onOpenSettings={() => setIsSettingsOpen(true)}
-                />
-                {isSettingsOpen && (
-                  <SettingsModal
-                    onClose={() => setIsSettingsOpen(false)}
-                  />
-                )}
-                <Chat />
-              </main>
-            </nav>
-          } />
-        </Routes>
-      </Router>
-      <ToastContainer
-        position="top-right"
-        autoClose={2000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick={false}
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-      />
-    </div>
+            <Route
+              path="/test"
+              element={
+                <nav className="">
+                  <UploadFiles />
+                </nav>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <nav>
+                  <div className="">
+                    <ChatHeader toggleSidebar={toggleSidebar} />
+                  </div>
+                  <main className="flex top-16 h-fit bg-black">
+                    <ChatSidebar
+                      isSidebarOpen={isSidebarOpen}
+                      onOpenSettings={() => setIsSettingsOpen(true)}
+                    />
+                    {isSettingsOpen && (
+                      <SettingsModal onClose={() => setIsSettingsOpen(false)} />
+                    )}
+                    <Chat />
+                  </main>
+                </nav>
+              }
+            />
+          </Routes>
+        </Router>
+        <ToastContainer
+          position="top-right"
+          autoClose={2000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick={false}
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark"
+        />
+      </div>
     </Provider>
-  )
-}
+  );
+};
 
-export default App
+export default App;
