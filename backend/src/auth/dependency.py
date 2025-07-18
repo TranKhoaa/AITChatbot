@@ -1,7 +1,8 @@
 from typing import Optional
-from fastapi import Request, Depends, WebSocket, HTTPException
+from fastapi import Request, Depends, WebSocket, HTTPException, Cookie
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from .utils import decode_token
+
 
 class TokenBearer(HTTPBearer):
     def __init__(self, auto_error: bool = True, type: str = "access"):
@@ -20,7 +21,7 @@ class TokenBearer(HTTPBearer):
                 detail="Invalid authentication credentials",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        
+
         try:
             payload = decode_token(token, type=self.type)
             if not payload:
@@ -38,30 +39,8 @@ class TokenBearer(HTTPBearer):
 
         return payload
 
-
-async def get_current_user_from_websocket(websocket: WebSocket, token: str = None):
-    """Get current user from WebSocket with token validation."""
-    if not token:
-        # Try to get token from query parameters
-        token = websocket.query_params.get("token")
-    
-    if not token:
-        await websocket.close(code=4001, reason="Authentication token required")
-        return None
-    
-    try:
-        payload = decode_token(token, type="access")
-        if not payload:
-            await websocket.close(code=4001, reason="Invalid token")
-            return None
-        return payload
-    except Exception:
-        await websocket.close(code=4001, reason="Invalid token")
-        return None
-
-
 def AccessTokenBearerUser(payload: dict = Depends(TokenBearer(type="access"))):
-    if payload["type"] != "access" or payload['data']["role"] != "user":
+    if payload["type"] != "access" or payload["data"]["role"] != "user":
         raise HTTPException(
             status_code=403,
             detail="Access token required",
@@ -69,17 +48,47 @@ def AccessTokenBearerUser(payload: dict = Depends(TokenBearer(type="access"))):
         )
     return payload
 
-def RefreshTokenBearerUser(payload: dict = Depends(TokenBearer(type="refresh"))):
-    if payload["type"] != "refresh" or payload['data']["role"] != "user":
+
+def RefreshTokenBearerUser(
+    refresh_token: Optional[str] = Cookie(None, alias="refresh_token")
+):
+    """
+    Dependency to get refresh token from httpOnly cookie for user
+    """
+    if not refresh_token:
         raise HTTPException(
-            status_code=403,
-            detail="Refresh token required",
+            status_code=401,
+            detail="Refresh token not found in cookie",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return payload
+
+    try:
+        payload = decode_token(refresh_token, type="refresh")
+        if not payload:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid refresh token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        if payload["type"] != "refresh" or payload["data"]["role"] != "user":
+            raise HTTPException(
+                status_code=403,
+                detail="Invalid refresh token for user",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        return payload
+    except Exception as e:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from e
+
 
 def AccessTokenBearerAdmin(payload: dict = Depends(TokenBearer(type="access"))):
-    if payload["type"] != "access" or payload['data']["role"] != "admin":
+    if payload["type"] != "access" or payload["data"]["role"] != "admin":
         raise HTTPException(
             status_code=403,
             detail="Access token required",
@@ -87,11 +96,40 @@ def AccessTokenBearerAdmin(payload: dict = Depends(TokenBearer(type="access"))):
         )
     return payload
 
-def RefreshTokenBearerAdmin(payload: dict = Depends(TokenBearer(type="refresh"))):
-    if payload["type"] != "refresh" or payload['data']["role"] != "admin":
+
+def RefreshTokenBearerAdmin(
+    refresh_token: Optional[str] = Cookie(None, alias="refresh_token")
+):
+    """
+    Dependency to get refresh token from httpOnly cookie for admin
+    """
+    if not refresh_token:
         raise HTTPException(
-            status_code=403,
-            detail="Refresh token required",
+            status_code=401,
+            detail="Refresh token not found in cookie",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return payload
+
+    try:
+        payload = decode_token(refresh_token, type="refresh")
+        if not payload:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid refresh token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        if payload["type"] != "refresh" or payload["data"]["role"] != "admin":
+            raise HTTPException(
+                status_code=403,
+                detail="Invalid refresh token for admin",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        return payload
+    except Exception as e:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from e

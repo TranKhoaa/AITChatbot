@@ -1,41 +1,25 @@
-import axios from "axios";
-
-const API_URL = "http://127.0.0.1:8000/api/v1/auth";
+import axiosInstance from "../../api/axiosInstance";
 
 export const signupUser = async (credentials) => {
-  try {
-    console.log("Sending credentials:", credentials);
-    const response = await axios.post(`${API_URL}/signup/user`, credentials);
-    return response.data;
-  } catch (error) {
-    throw error.response.data || "Signup Failed";
-  }
+  const res = await axiosInstance.post("auth/signup/user", credentials);
+  return res.data;
 };
+
 export const signupAdmin = async (credentials) => {
-  try {
-    console.log("Sending credentials:", credentials);
-    const response = await axios.post(`${API_URL}/signup/admin`, credentials);
-    return response.data;
-  } catch (error) {
-    throw error.response.data || "Signup Failed";
-  }
+  const res = await axiosInstance.post("auth/signup/admin", credentials);
+  return res.data;
 };
+
 export const loginUser = async (credentials) => {
-  try {
-    const response = await axios.post(`${API_URL}/login/user`, credentials);
-    return response.data;
-  } catch (error) {
-    const message = error.response.data || "Login Failed";
-    const err = new Error(message);
-    err.status = error.status;
-    throw err;
-  }
+  const res = await axiosInstance.post("auth/login/user", credentials);
+  return res.data;
 };
+
 export const loginAdmin = async (credentials) => {
-  try {
-    const response = await axios.post(`${API_URL}/login/admin`, credentials);
-    return response.data;
-  } catch (error) {
-    throw error.response.data || "Login Failed";
-  }
+  const res = await axiosInstance.post("auth/login/admin", credentials);
+  return res.data;
+};
+
+export const logoutUser = async () => {
+  await axiosInstance.post("auth/logout"); // Backend sẽ xóa cookie
 };

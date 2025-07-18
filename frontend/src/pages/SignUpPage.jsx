@@ -45,23 +45,24 @@ function SignUpPage() {
     e.preventDefault();
 
     let hasError = false;
-    setUsernameError("")
-    setMissingPasswordError("")
-    setMissingConfirmError("")
+    setUsernameError("");
+    setMissingPasswordError("");
+    setMissingConfirmError("");
 
     if (!username.trim()) {
       setUsernameError("Please fill out this field");
       hasError = true;
-    } if (!password.trim()) {
+    }
+    if (!password.trim()) {
       setMissingPasswordError("Please fill out this field");
       hasError = true;
-    } if (!confirmPassword.trim()) {
+    }
+    if (!confirmPassword.trim()) {
       setMissingConfirmError("Please fill out this field");
       hasError = true;
     }
 
-    if(hasError) return;
-    
+    if (hasError) return;
 
     if (password != confirmPassword) {
       setPasswordError("Password do not match, please enter again");
@@ -89,11 +90,13 @@ function SignUpPage() {
 
   return (
     <AuthLayout>
-      <div className="bg-white text-black px-24 py-28 w-[35%] flex flex-col gap-y-10 justify-around rounded-2xl">
-        <h2>Sign Up</h2>
-        <form onSubmit={handleSubmit} className="space-y-3">
+      <div className="bg-white text-black p-5  xl:px-15 xl:py-15 w-full 2xl:w-[45%] xl:w-[70%] flex flex-col justify-around rounded-2xl space-y-3 xl:space-y-5">
+        <h2 className="text-xl lg:text-2xl xl:text-3xl font-medium">Sign Up</h2>
+        <form onSubmit={handleSubmit} className="space-y-2">
           <div className="input-block">
-            <label className="text-slate-600 text-xl">User name</label>
+            <label className="text-slate-600 text-sm lg:text-base">
+              User name
+            </label>
             <input
               type="text"
               value={username}
@@ -105,23 +108,31 @@ function SignUpPage() {
               }`}
             />
             {usernameError && (
-                <p className="my-1 text-red-500">{usernameError}</p>
-              )}
+              <p className="my-1 text-sm xl:text-base text-red-500">
+                {usernameError}
+              </p>
+            )}
           </div>
           <div className="input-block">
-            <label className="text-slate-600 text-xl">Email address</label>
+            <label className="text-slate-600 text-sm lg:text-base">
+              Email address
+            </label>
             <input
               type="text"
               className="input-text focus:outline-none  border border-slate-300 focus:border-slate-500  "
-              
             />
           </div>
           <div className="input-block">
             <div className="flex flex-row justify-between">
-              <label className="text-slate-600 text-xl">Password</label>
+              <label className="text-slate-600 text-sm lg:text-base">
+                Password
+              </label>
               <div className="flex flex-row gap-x-3 cursor-pointer">
                 {showPassword && <img src={hideIcon} alt="HideIcon" />}
-                <span className="text-xl text-gray-700" onClick={togglePass}>
+                <span
+                  className="text-sm lg:text-base text-gray-700"
+                  onClick={togglePass}
+                >
                   {showPassword ? "Hide" : "Show"}
                 </span>
               </div>
@@ -137,19 +148,23 @@ function SignUpPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
             {missingPasswordError && (
-                <p className="my-1 text-red-500">{missingPasswordError}</p>
-              )}
-            <label className="text-slate-600 text-lg cursor-pointer">
+              <p className="my-1 text-sm xl:text-base text-red-500">
+                {missingPasswordError}
+              </p>
+            )}
+            <label className="text-slate-600 text-sm xl:text-base">
               Use 8 or more characters with a mix of letters, numbers & symbols
             </label>
           </div>
           <div className="input-block">
             <div className="flex flex-row justify-between">
-              <label className="text-slate-600 text-xl">Confirm Password</label>
+              <label className="text-slate-600 text-sm lg:text-base">
+                Confirm Password
+              </label>
               <div className="flex flex-row gap-x-3 cursor-pointer">
                 {showConfirmPassword && <img src={hideIcon} alt="HideIcon" />}
                 <span
-                  className="text-xl text-gray-700"
+                  className="text-sm lg:text-base text-gray-700"
                   onClick={toggleConfirmPass}
                 >
                   {showConfirmPassword ? "Hide" : "Show"}
@@ -167,60 +182,65 @@ function SignUpPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
             {missingConfirmError && (
-                <p className="my-1 text-red-500">{missingConfirmError}</p>
-              )}
+              <p className="my-1 text-sm xl:text-base text-red-500">
+                {missingConfirmError}
+              </p>
+            )}
           </div>
 
-          <div className="flex flex-col gap-y-5">
-          <label class="items-start ">
+          <div className="flex flex-col gap-y-2">
+            <label class="flex items-start ">
               <input
                 type="checkbox"
-                className=" text-slate-900 mt-2 w-4 h-4 cursor-pointer"
+                className=" text-slate-900 mt-1 xl:mt-1.5 cursor-pointer"
                 checked={isAdmin}
                 onChange={(e) => setIsAdmin(e.target.checked)}
               />
-              <span class="ml-2 text-gray-700 text-xl">
+              <span class="ml-2 text-gray-700 text-sm xl:text-base">
                 Sign up as admin
               </span>
             </label>
-            <label class="items-start">
+            <label class="flex items-start">
               <input
                 type="checkbox"
-                className=" text-slate-900 mt-2 w-4 h-4 cursor-pointer"
+                className=" text-slate-900 mt-1 xl:mt-1.5 cursor-pointer"
               />
-              <span class="ml-2 text-gray-700 text-xl">
+              <span class="ml-2 text-gray-700 text-sm  xl:text-base">
                 By creating an account, I agree to our{" "}
-                <span className="font-bold underline text-xl cursor-pointer">
+                <span className="font-bold underline text-sm xl:text-base cursor-pointer">
                   Terms of use
                 </span>{" "}
                 and{" "}
-                <span className="font-bold underline text-xl cursor-pointer">
+                <span className="font-bold underline text-sm xl:text-base cursor-pointer">
                   Privacy Policy
                 </span>
               </span>
             </label>
-            <label class=" items-start">
+            <label class="flex items-start">
               <input
                 type="checkbox"
-                className=" text-slate-900 mt-2 w-4 h-4 cursor-pointer"
+                className=" text-slate-900 mt-1 xl:mt-1.5 cursor-pointer"
               />
-              <span class="ml-2 text-gray-700 text-xl">
+              <span class="ml-2 text-gray-700 text-sm xl:text-base">
                 By creating an account, I am also consenting to receive SMS
                 messages and emails, including product new feature updates,
                 events, and marketing promotions.
               </span>
             </label>
           </div>
-          <div className="flex flex-row gap-x-28 items-center">
+          <div className="flex flex-col gap-y-5 items-center md:flex-row md:gap-x-20 md:items-center">
             <button
               type="submit"
-              className="w-40 rounded-full h-14 bg-black hover:bg-slate-800 text-white text-xl"
+              className="w-40 h-10 rounded-full xl:h-14 bg-black hover:bg-slate-800 text-white text-sm xl:text-base"
             >
               Sign up
             </button>
-            <span className="text-xl text-gray-700">
+            <span className="text-sm lg:text-base text-gray-700">
               Already have an account?{" "}
-              <a href="/login" className="underline text-xl cursor-pointer">
+              <a
+                href="/login"
+                className="underline text-sm xl:text-base cursor-pointer"
+              >
                 Log in
               </a>
             </span>
