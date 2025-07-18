@@ -20,7 +20,7 @@ function LoginPage() {
   const [loginError, setLoginError] = useState("");
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
+  
   const togglePass = (e) => {
     e.preventDefault();
     setShowPassword(!showPassword);
@@ -55,11 +55,11 @@ function LoginPage() {
         setCredentials({
           id: response.id,
           name: response.name,
+          role: "admin",
           access_token: response.access_token,
-          refresh_token: response.refresh_token,
         })
       );
-      navigate("/chat");
+    navigate(response.role === "admin" ? "/admin" : "/chat");
     } catch (err) {
       if (err.status === 401) {
         setLoginError("Your username or password is incorrect.");
@@ -188,6 +188,7 @@ function LoginPage() {
             </span> */}
           </div>
         </form>
+      
       </div>
     </AuthLayout>
   );
