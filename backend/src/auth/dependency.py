@@ -39,6 +39,7 @@ class TokenBearer(HTTPBearer):
 
         return payload
 
+
 def AccessTokenBearerUser(payload: dict = Depends(TokenBearer(type="access"))):
     if payload["type"] != "access" or payload["data"]["role"] != "user":
         raise HTTPException(
@@ -131,5 +132,27 @@ def RefreshTokenBearerAdmin(
         raise HTTPException(
             status_code=401,
             detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from e
+
+
+async def get_current_user_from_websocket(
+    websocket: WebSocket,
+    token: HTTPAuthorizationCredentials = Depends(TokenBearer(type="access")),
+):
+    """Get current user from WebSocket connection."""
+    try:
+        payload = decode_token(token.credentials, type="access")
+        if not payload or payload["type"] != "access":
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid authentication credentials",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        return payload["data"]
+    except Exception as e:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         ) from e
