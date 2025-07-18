@@ -4,9 +4,18 @@ import uploadIcon from '../assets/upload_icon.svg'
 import signoutIcon from '../assets/sign_out_icon.svg'
 import settingIcon from '../assets/upload_icon.svg'
 import { NavLink } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { logout } from "../features/auth/authSlice";
 import FileManagement from "./FileManagement";
 import FileUploading from "./FileUploading";
 const SideBar = () => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const handleSignOut = () => {
+        dispatch(logout());
+        navigate("/login");
+    };
     return (
         <div className="flex flex-col h-screen w-[15%] border-r border-r-slate-300 ">    
             <h2 className="h-[10%] flex flex-row items-center px-8 border-b border-b-slate-300">Chatbot</h2>
@@ -22,7 +31,8 @@ const SideBar = () => {
                     </NavLink>
                 </div>
                 <div className="flex flex-col gap-y-5 pb-10">
-                    <button className="flex flex-row items-center gap-x-4 hover:bg-slate-700 hover:rounded-lg hover:p-2">
+                    <button className="flex flex-row items-center gap-x-4 hover:bg-slate-700 hover:rounded-lg hover:p-2"
+                    onClick={handleSignOut}>
                         <img src={signoutIcon} alt="Sign out Icon" />
                         <span>Sign out</span>
                     </button>

@@ -56,7 +56,7 @@ function LoginPage() {
         setCredentials({
           id: response.id,
           name: response.name,
-          role: "admin",
+          role: response.role,
           access_token: response.access_token,
         })
       );

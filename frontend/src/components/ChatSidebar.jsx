@@ -5,11 +5,18 @@ import { AiOutlineHistory, AiOutlineSearch } from 'react-icons/ai';
 import { HiOutlineDocumentText } from 'react-icons/hi';
 import "../App.css"
 import { useNavigate} from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { logout } from "../features/auth/authSlice";
 const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
   const chat_history = [
     { id: "chat1", name: "grrr" },
     { id: "chat2", name: "........"}
   ];
+  const dispatch = useDispatch();
+    const handleSignOut = () => {
+        dispatch(logout());
+        navigate("/login");
+    };
   const navigate = useNavigate()
   return (
     <div className={`flex transition-transform ease-in-out duration-400 ${isSidebarOpen ? "w-fit" : "w-0"}`}>
@@ -81,9 +88,10 @@ const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
         <div className="fixed bottom-0 flex flex-col gap-y-2 mb-4">
             <div className="w-64 h-10">
                 <div className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white group transition-all duration-200 bottom-2">
-                    <a className="flex items-center px-4 py-2.5 text-sm font-medium text-white duration-200">
+                    <button className="flex items-center px-4 py-2.5 text-sm font-medium text-white duration-200"
+                    onClick={handleSignOut}>
                     <FiLogOut className="h-5 w-5 mr-3"/>Sign out
-                    </a>
+                    </button>
                 </div>
             </div>
 
