@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.auth.router import auth_router
 from src.file.router import file_router
+from src.websocket.router import websocket_router
 
 # Import all models to ensure they are registered with SQLAlchemy
 # This must be done before any SQLAlchemy operations
@@ -15,6 +16,7 @@ app = FastAPI(
 )
 origins = [
     "http://localhost:5173",
+    "http://127.0.0.1:5500"
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -34,3 +36,4 @@ async def root():
 
 app.include_router(auth_router, prefix=f"/api/{version}/auth", tags=["auth"])
 app.include_router(file_router, prefix=f"/api/{version}/admin/file", tags=["file"])
+app.include_router(websocket_router, prefix=f"/api/{version}", tags=["websocket"])

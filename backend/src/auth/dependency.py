@@ -1,7 +1,6 @@
 from typing import Optional
-from fastapi import Request, Depends
+from fastapi import Request, Depends, WebSocket, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from fastapi import HTTPException
 from .utils import decode_token
 
 class TokenBearer(HTTPBearer):
@@ -38,6 +37,28 @@ class TokenBearer(HTTPBearer):
             ) from e
 
         return payload
+
+
+async def get_current_user_from_websocket(websocket: WebSocket, token: str = None):
+    """Get current user from WebSocket with token validation."""
+    if not token:
+        # Try to get token from query parameters
+        token = websocket.query_params.get("token")
+    
+    if not token:
+        await websocket.close(code=4001, reason="Authentication token required")
+        return None
+    
+    try:
+        payload = decode_token(token, type="access")
+        if not payload:
+            await websocket.close(code=4001, reason="Invalid token")
+            return None
+        return payload
+    except Exception:
+        await websocket.close(code=4001, reason="Invalid token")
+        return None
+
 
 def AccessTokenBearerUser(payload: dict = Depends(TokenBearer(type="access"))):
     if payload["type"] != "access" or payload['data']["role"] != "user":

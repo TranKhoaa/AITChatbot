@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>File Upload with Real-time Notifications</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .upload-area {
+        border: 2px dashed #ccc;
+        padding: 20px;
+        text-align: center;
+        margin: 20px 0;
+      }
+      .notification {
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 4px;
+      }
+      .notification.uploading {
+        background-color: #e3f2fd;
+        border-left: 4px solid #2196f3;
+      }
+      .notification.processing {
+        background-color: #fff3e0;
+        border-left: 4px solid #ff9800;
+      }
+      .notification.completed {
+        background-color: #e8f5e8;
+        border-left: 4px solid #4caf50;
+      }
+      .notification.failed {
+        background-color: #ffebee;
+        border-left: 4px solid #f44336;
+      }
+      .progress-bar {
+        width: 100%;
+        height: 20px;
+        background-color: #f0f0f0;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 5px 0;
+      }
+      .progress-fill {
+        height: 100%;
+        background-color: #4caf50;
+        transition: width 0.3s ease;
+      }
+      .connection-status {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 4px;
+        font-weight: bold;
+      }
+      .connected {
+        background-color: #e8f5e8;
+        color: #2e7d32;
+      }
+      .disconnected {
+        background-color: #ffebee;
+        color: #c62828;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Async File Upload Demo</h1>
+
+    <div id="connectionStatus" class="connection-status disconnected">
+      ❌ Disconnected from server
+    </div>
+
+    <div class="upload-area">
+      <h3>Upload Files</h3>
+      <input type="file" id="fileInput" multiple />
+      <br /><br />
+      <button onclick="uploadFiles()">Upload Selected Files</button>
+    </div>
+
+    <div>
+      <h3>Upload Notifications</h3>
+      <div id="notifications"></div>
+    </div>
+
+    <script>
+      // WebSocket connection
+      let ws = null;
+      const userId = "529a2181-e466-4f16-a190-93e5a747a435"; // In real app, get this from authentication
+      const token =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiNTI5YTIxODEtZTQ2Ni00ZjE2LWExOTAtOTNlNWE3NDdhNDM1IiwibmFtZSI6InRlc3RhZG1pbiIsInJvbGUiOiJhZG1pbiJ9LCJleHAiOjE3NTI4NjE4NjIsImp0aSI6IjdmMDI5NGFiLWJlMWMtNDAzZC04ZTBkLTgzMjgxNjUyMWFhZiIsInR5cGUiOiJhY2Nlc3MifQ.BKm_Lu9kmZ28DXQMqJCDadX-RULE-L_upWJC-R86sg0"; // In real app, get this from authentication
+
+      // File upload tracking
+      const uploadProgress = new Map();
+
+      function connectWebSocket() {
+        // Prevent multiple connections
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          return;
+        }
+
+        const wsUrl = `ws://localhost:8000/api/v1/ws/${userId}?token=${token}`;
+        console.log("Attempting to connect to WebSocket:", wsUrl);
+
+        try {
+          ws = new WebSocket(wsUrl);
+
+          ws.onopen = function () {
+            updateConnectionStatus(true);
+            console.log("WebSocket connected successfully");
+          };
+
+          ws.onmessage = function (event) {
+            try {
+              const message = JSON.parse(event.data);
+              console.log("Received WebSocket message:", message);
+              handleNotification(message);
+            } catch (error) {
+              console.error("Error parsing WebSocket message:", error);
+            }
+          };
+
+          ws.onclose = function (event) {
+            updateConnectionStatus(false);
+            console.log("WebSocket disconnected:", event.code, event.reason);
+
+            // Only reconnect if it wasn't a normal closure and we're not already connecting
+            if (
+              event.code !== 1000 &&
+              (!ws || ws.readyState === WebSocket.CLOSED)
+            ) {
+              console.log("Attempting to reconnect in 3 seconds...");
+              setTimeout(() => {
+                if (!ws || ws.readyState === WebSocket.CLOSED) {
+                  connectWebSocket();
+                }
+              }, 3000);
+            }
+          };
+
+          ws.onerror = function (error) {
+            console.error("WebSocket error:", error);
+            updateConnectionStatus(false);
+          };
+        } catch (error) {
+          console.error("Failed to create WebSocket connection:", error);
+          updateConnectionStatus(false);
+        }
+      }
+
+      function updateConnectionStatus(connected) {
+        const statusElement = document.getElementById("connectionStatus");
+        if (connected) {
+          statusElement.className = "connection-status connected";
+          statusElement.innerHTML = "✅ Connected to server";
+        } else {
+          statusElement.className = "connection-status disconnected";
+          statusElement.innerHTML = "❌ Disconnected from server";
+        }
+      }
+
+      function handleNotification(message) {
+        console.log("Handling notification:", message);
+        if (message.type === "file_upload") {
+          updateFileProgress(message.data);
+        }
+      }
+
+      function updateFileProgress(data) {
+        const { file_id, filename, status, progress, error_message } = data;
+        console.log(
+          `Updating progress for ${filename}: ${status} (${progress}%)`
+        );
+
+        let notificationElement = document.getElementById(
+          `notification-${file_id}`
+        );
+
+        if (!notificationElement) {
+          notificationElement = createNotificationElement(file_id, filename);
+        }
+
+        // Update notification content
+        const statusText = getStatusText(status, progress, error_message);
+        notificationElement.querySelector(".status-text").innerHTML =
+          statusText;
+        notificationElement.className = `notification ${status}`;
+
+        // Update progress bar
+        const progressBar = notificationElement.querySelector(".progress-fill");
+        if (progressBar) {
+          progressBar.style.width = `${progress}%`;
+        }
+      }
+
+      function createNotificationElement(fileId, filename) {
+        const notificationsContainer = document.getElementById("notifications");
+
+        const notificationDiv = document.createElement("div");
+        notificationDiv.id = `notification-${fileId}`;
+        notificationDiv.className = "notification uploading";
+
+        notificationDiv.innerHTML = `
+                <div><strong>${filename}</strong></div>
+                <div class="status-text">Starting upload...</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%"></div>
+                </div>
+            `;
+
+        notificationsContainer.appendChild(notificationDiv);
+        return notificationDiv;
+      }
+
+      function getStatusText(status, progress, errorMessage) {
+        switch (status) {
+          case "uploading":
+            return "Starting upload...";
+          case "processing":
+            return `Processing... ${Math.round(progress)}%`;
+          case "completed":
+            return "✅ Upload completed successfully!";
+          case "failed":
+            return `❌ Upload failed: ${errorMessage}`;
+          default:
+            return `Status: ${status}`;
+        }
+      }
+
+      async function uploadFiles() {
+        const fileInput = document.getElementById("fileInput");
+        const files = fileInput.files;
+
+        if (files.length === 0) {
+          alert("Please select files to upload");
+          return;
+        }
+
+        const formData = new FormData();
+        for (let file of files) {
+          formData.append("files", file);
+        }
+
+        try {
+          const response = await fetch(
+            "http://127.0.0.1:8000/api/v1/admin/file/upload",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoiNTI5YTIxODEtZTQ2Ni00ZjE2LWExOTAtOTNlNWE3NDdhNDM1IiwibmFtZSI6InRlc3RhZG1pbiIsInJvbGUiOiJhZG1pbiJ9LCJleHAiOjE3NTI4NjE4NjIsImp0aSI6IjdmMDI5NGFiLWJlMWMtNDAzZC04ZTBkLTgzMjgxNjUyMWFhZiIsInR5cGUiOiJhY2Nlc3MifQ.BKm_Lu9kmZ28DXQMqJCDadX-RULE-L_upWJC-R86sg0`,
+              },
+              body: formData,
+            }
+          );
+
+          if (response.ok) {
+            const result = await response.json();
+            console.log("Upload started:", result);
+
+            // Clear file input
+            fileInput.value = "";
+          } else {
+            const error = await response.json();
+            alert(`Upload failed: ${error.detail}`);
+          }
+        } catch (error) {
+          console.error("Upload error:", error);
+          alert("Upload failed: Network error");
+        }
+      }
+
+      // Initialize WebSocket connection when page loads
+      window.onload = function () {
+        console.log("Page loaded, initializing WebSocket connection...");
+        connectWebSocket();
+      };
+
+      // Handle page visibility changes to prevent unnecessary reconnections
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden) {
+          console.log("Page hidden, WebSocket will remain connected");
+        } else {
+          console.log("Page visible again");
+          // Only reconnect if connection is actually lost
+          if (!ws || ws.readyState === WebSocket.CLOSED) {
+            console.log("Reconnecting WebSocket...");
+            connectWebSocket();
+          }
+        }
+      });
+
+      // Handle page unload to clean up WebSocket
+      window.addEventListener("beforeunload", function () {
+        if (ws) {
+          ws.close(1000, "Page unloading");
+        }
+      });
+    </script>
+  </body>
+</html>
