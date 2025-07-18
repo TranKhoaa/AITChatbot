@@ -2,12 +2,13 @@ import React from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import FileManagement from "../components/FileManagement";
 import FileUploading from "../components/FileUploading";
-import Sidebar from "../components/sidebar";
+import AdminSidebar from "../components/AdminSidebar";
+import sidebar from "../components/sidebar";
 
 const AdminPage = () => {
     return (
     <div style={{ display: "flex", height: "100vh" }}>
-      <Sidebar/>
+      <sidebar/>
       <div className="w-full">
         <Routes>
           <Route path="/" element={<Navigate to="file-management" />} />

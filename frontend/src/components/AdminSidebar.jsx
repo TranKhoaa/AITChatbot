@@ -1,4 +1,6 @@
-import { FaPlus } from 'react-icons/fa6';
+import { FaPlus} from 'react-icons/fa6';
+import { FaFileUpload } from 'react-icons/fa';
+import { MdOutlineUploadFile } from 'react-icons/md';
 import { IoMdSettings } from 'react-icons/io';
 import { FiLogOut } from 'react-icons/fi';
 import { AiOutlineHistory, AiOutlineSearch } from 'react-icons/ai';
@@ -7,7 +9,8 @@ import "../App.css"
 import { useNavigate} from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../features/auth/authSlice";
-const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
+import { NavLink } from "react-router-dom";
+const AdminSidebar = ({ isSidebarOpen, onOpenSettings }) => {
   const chat_history = [
     { id: "chat1", name: "grrr" },
     { id: "chat2", name: "........"}
@@ -38,7 +41,7 @@ const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
         </div>
         <nav className="mt-3 px-3">
         {/* Main Navigation */}
-        <div className="space-y-4">
+        <div className="space-y-2">
             {/* New chat */}
             <a
             href="#"
@@ -46,6 +49,21 @@ const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
             >
                 <FaPlus className="h-4 w-4 mr-3" />New chat
             </a>
+            {/* Documents */}
+            <NavLink to="/admin/file-management"
+            className="mt-4 flex items-center px-4 py-2.5 text-sm font-medium rounded-lg text-white hover:bg-gray-700 hover:text-white group transition-all duration-200"
+            onClick={() => navigate("/admin")}
+            >
+            <HiOutlineDocumentText className="h-5 w-5 mr-3" />
+            File Management
+            </NavLink>
+            <NavLink to="/admin/upload"
+            className="mb-8 flex items-center px-4 py-2.5 text-sm font-medium rounded-lg text-white hover:bg-gray-700 hover:text-white group transition-all duration-200"
+            onClick={() => navigate("/admin")}
+            >
+            <MdOutlineUploadFile className="h-5 w-5 mr-3" />
+            Upload
+            </NavLink>
             {/* History */}
             <div className="space-y-1">
                 <a
@@ -102,4 +120,4 @@ const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
     </div>
     );
 };
-export default ChatSidebar;
+export default AdminSidebar;

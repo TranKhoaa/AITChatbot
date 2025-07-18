@@ -1,5 +1,3 @@
-
-// src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -17,7 +15,7 @@ import { ToastContainer } from 'react-toastify';
 import { Provider } from 'react-redux';
 import store from './app/store';
 import UnauthorizedPage from './pages/UnauthorizedPage';
-
+import AdminSidebar from './components/AdminSidebar';
 import AdminRoute from './routes/AdminRoute';
 import PrivateRoute from './routes/PrivateRoute';
 
@@ -72,7 +70,7 @@ const App = () => {
             }
           />
 
-          <Route path="/test" element={<UploadFiles />} />
+          <Route path="/test" element={<AdminSidebar />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
 
