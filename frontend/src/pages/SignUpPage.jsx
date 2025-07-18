@@ -228,14 +228,14 @@ function SignUpPage() {
               </span>
             </label>
           </div>
-          <div className="flex flex-col gap-y-5 items-center md:flex-row md:gap-x-20 md:items-center">
+          <div className="flex flex-col gap-y-5 items-center md:flex-row md:gap-x-14 md:items-center">
             <button
               type="submit"
               className="w-40 h-10 rounded-full xl:h-14 bg-black hover:bg-slate-800 text-white text-sm xl:text-base"
             >
               Sign up
             </button>
-            <span className="text-sm lg:text-base text-gray-700">
+            <span className="text-sm xl:text-sm text-gray-700">
               Already have an account?{" "}
               <a
                 href="/login"
