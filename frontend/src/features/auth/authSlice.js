@@ -2,29 +2,31 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const storedAuth = localStorage.getItem("auth");
 const initialState = storedAuth
-  ? { ...JSON.parse(storedAuth), status: "succeeded", error: null }: { 
+  ? { ...JSON.parse(storedAuth), status: "succeeded", error: null }
+  : { 
       user: null, 
       token: null, 
       refreshToken: null, 
       status: "idle", 
       error: null 
     };
-  const authSlice = createSlice({
+
+const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
     setCredentials: (state, action) => {
-    const { id, name, access_token, refresh_token, role } = action.payload;
-    state.user = { id, name, role };
-    state.token = access_token;
-    state.refreshToken = refresh_token;
-    state.status = "succeeded";
+      const { id, name, access_token, refresh_token, role } = action.payload;
+      state.user = { id, name, role };
+      state.token = access_token;
+      state.refreshToken = refresh_token;
+      state.status = "succeeded";
 
-    localStorage.setItem("auth", JSON.stringify({
-    user: { id, name, role },
-    token: access_token,
-    refreshToken: refresh_token,
-  }));
+      localStorage.setItem("auth", JSON.stringify({
+        user: { id, name, role },
+        token: access_token,
+        refreshToken: refresh_token,
+      }));
     },
     setError: (state, action) => {
       state.error = action.payload;
@@ -39,7 +41,6 @@ const initialState = storedAuth
       localStorage.removeItem("auth");
     },
   },
-
 });
 
 export const { setCredentials, setError, logout } = authSlice.actions;
