@@ -70,7 +70,7 @@ const App = () => {
             }
           />
 
-          <Route path="/test" element={<AdminSidebar />} />
+          <Route path="/test" element={<UploadFiles />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
 
