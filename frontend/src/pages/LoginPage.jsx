@@ -72,7 +72,7 @@ function LoginPage() {
   };
   return (
     <AuthLayout>
-      <div className="bg-white text-black p-5  xl:px-20 xl:py-20 w-full xl:w-[70%] flex flex-col justify-around rounded-2xl space-y-3 xl:space-y-5">
+      <div className="bg-white text-black p-5  xl:px-20 xl:py-20 w-full xl:w-[45%] flex flex-col justify-around rounded-2xl space-y-3 xl:space-y-5">
         <h2 className="text-xl lg:text-2xl xl:text-3xl font-medium">Log In</h2>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-3">
