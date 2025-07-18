@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, BrowserRouter, Link } from 'react-router-dom';
+// src/App.jsx
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
@@ -7,74 +8,87 @@ import AdminPage from './pages/adminPage';
 import UploadFiles from './components/UploadFiles';
 import Chat from './pages/Chat';
 import ChatSidebar from './components/ChatSidebar';
-import sidebar from './components/sidebar';
 import ChatHeader from './components/ChatHeader';
 import Settings from './components/Settings';
 import SettingsModal from './components/Settings';
-import 'react-toastify/dist/ReactToastify.css';
 import { useState } from 'react';
 import { ToastContainer } from 'react-toastify';
+import { Provider } from 'react-redux';
 import store from './app/store';
-import { Provider } from 'react-redux'
+import UnauthorizedPage from './pages/UnauthorizedPage';
+
+import AdminRoute from './routes/AdminRoute';
+import PrivateRoute from './routes/PrivateRoute';
 
 const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+
   return (
     <Provider store={store}>
-    <div>
       <Router>
         <Routes>
-          <Route path='/' element={<HomePage />} />
-          <Route path='/login' element={<LoginPage />} />
-          <Route path='/signup' element={<SignUpPage />} />
-          <Route path='/admin/*' element={<AdminPage />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-          <Route path='/settings' element={<Settings />} />
 
-          <Route path="/test" element={
-            <nav className="">
-              <UploadFiles />
-            </nav>} />
-          <Route path="/chat" element={
-            <nav>
-              <div className="">
-                <ChatHeader toggleSidebar={toggleSidebar} />
-              </div>
-              <main className="flex top-16 h-fit bg-black">
-                <ChatSidebar
-                  isSidebarOpen={isSidebarOpen}
-                  onOpenSettings={() => setIsSettingsOpen(true)}
-                />
-                {isSettingsOpen && (
-                  <SettingsModal
-                    onClose={() => setIsSettingsOpen(false)}
-                  />
-                )}
-                <Chat />
-              </main>
-            </nav>
-          } />
+          {/* Chỉ user đăng nhập mới vào được */}
+          <Route
+            path="/chat"
+            element={
+              <PrivateRoute>
+                <div>
+                  <ChatHeader toggleSidebar={toggleSidebar} />
+                  <main className="flex top-16 h-fit bg-black">
+                    <ChatSidebar
+                      isSidebarOpen={isSidebarOpen}
+                      onOpenSettings={() => setIsSettingsOpen(true)}
+                    />
+                    {isSettingsOpen && (
+                      <SettingsModal onClose={() => setIsSettingsOpen(false)} />
+                    )}
+                    <Chat />
+                  </main>
+                </div>
+              </PrivateRoute>
+            }
+          />
+
+          {/* Chỉ admin mới vào được */}
+          <Route
+            path="/admin/*"
+            element={
+              <AdminRoute>
+                <AdminPage />
+              </AdminRoute>
+            }
+          />
+
+          <Route path="/test" element={<UploadFiles />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
-      </Router>
-      <ToastContainer
-        position="top-right"
-        autoClose={2000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick={false}
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-      />
-    </div>
-    </Provider>
-  )
-}
 
-export default App
+        <ToastContainer
+          position="top-right"
+          autoClose={2000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick={false}
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="dark"
+        />
+      </Router>
+    </Provider>
+  );
+};
+
+export default App;
