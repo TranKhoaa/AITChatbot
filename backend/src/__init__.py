@@ -22,9 +22,9 @@ app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5500",
-    "http://192.168.241.94:8000",
+    # "http://localhost:5173",
+    # "http://127.0.0.1:5500",
+    # "http://192.168.241.94:8000",
 ]
 app.add_middleware(
     CORSMiddleware,
