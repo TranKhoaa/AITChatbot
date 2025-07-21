@@ -3,7 +3,7 @@ import store from "../app/store";
 import { setCredentials, logout } from "../features/auth/authSlice";
 
 const axiosInstance = axios.create({
-  baseURL: "http://127.0.0.1:8000/api/v1/",
+  baseURL: "http://192.168.241.94:8000/api/v1/",
   withCredentials: true, // Bắt buộc để gửi cookie
 });
 
@@ -28,7 +28,7 @@ axiosInstance.interceptors.response.use(
     ) {
       originalRequest._retry = true;
       try {
-        const res = await axios.get("http://127.0.0.1:8000/api/v1/auth/refresh", {
+        const res = await axios.get("http://192.168.241.94:8000/api/v1/auth/refresh", {
           withCredentials: true,
         });
 

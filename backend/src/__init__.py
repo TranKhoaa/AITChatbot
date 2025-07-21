@@ -1,5 +1,7 @@
 from fastapi import FastAPI
-
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
 from fastapi.middleware.cors import CORSMiddleware
 from src.auth.router import auth_router
 from src.file.router import file_router
@@ -13,9 +15,17 @@ version = "v1"
 app = FastAPI(
     version=version,
 )
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
+
+# Route fallback cho React Router
+@app.get("/{full_path:path}")
+async def catch_all(full_path: str):
+    return FileResponse(os.path.join("static", "index.html"))
+
 origins = [
     "http://localhost:5173",
-    "http://127.0.0.1:5500"
+    "http://127.0.0.1:5500",
+    "http://192.168.241.94:8000",
 ]
 app.add_middleware(
     CORSMiddleware,
