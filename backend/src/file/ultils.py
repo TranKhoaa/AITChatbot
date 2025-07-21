@@ -1,9 +1,9 @@
 from docx import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 import numpy as np
 
-model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
+model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-mpnet-base-v2')
 
 def read_docx_file(file_path):
     doc = Document(file_path)

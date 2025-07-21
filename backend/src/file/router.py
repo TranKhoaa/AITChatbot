@@ -84,7 +84,7 @@ async def list_files(session: AsyncSession = Depends(get_session)):
     files = await session.exec(statement)
     files_all = files.all()
     print(f"Files in database: {files_all}")
-    print(files_all[0].admin)
+    print(files_all[0].admin if files_all else "No files found")
     return files_all
 
 

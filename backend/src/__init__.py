@@ -39,6 +39,9 @@ app.add_middleware(
 async def index():
     return FileResponse(os.path.join("static", "index.html"))
 
+app.include_router(auth_router, prefix=f"/api/{version}/auth", tags=["auth"])
+app.include_router(file_router, prefix=f"/api/{version}/admin/file", tags=["file"])
+
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str, request: Request):
     # Nếu là yêu cầu file tĩnh (CSS, JS, hình ảnh), thì trả 404 chứ không nuốt
@@ -46,5 +49,3 @@ async def serve_react_app(full_path: str, request: Request):
         raise StarletteHTTPException(status_code=404)
     return FileResponse(os.path.join("static", "index.html"))
 
-app.include_router(auth_router, prefix=f"/api/{version}/auth", tags=["auth"])
-app.include_router(file_router, prefix=f"/api/{version}/admin/file", tags=["file"])
