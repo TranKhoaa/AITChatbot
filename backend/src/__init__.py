@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.requests import Request
 from fastapi.middleware.cors import CORSMiddleware
 from src.auth.router import auth_router
 from src.file.router import file_router
@@ -15,12 +17,7 @@ version = "v1"
 app = FastAPI(
     version=version,
 )
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
-
-# Route fallback cho React Router
-@app.get("/{full_path:path}")
-async def catch_all(full_path: str):
-    return FileResponse(os.path.join("static", "index.html"))
+app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 
 origins = [
     "http://localhost:5173",
@@ -41,6 +38,10 @@ app.add_middleware(
 async def root():
     """Simple hello world endpoint"""
     return {"message": "Hello, World!"}
+# Route fallback cho React Router
+@app.get("/")
+async def index():
+    return FileResponse(os.path.join("static", "index.html"))
 
 
 app.include_router(auth_router, prefix=f"/api/{version}/auth", tags=["auth"])
