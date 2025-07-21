@@ -3,7 +3,7 @@
 @tailwind components;
 @tailwind utilities;
 @import "tailwindcss";
-h1 {
+/* h1 {
   font-size: 48px;  
   font-weight: 500;
 }
@@ -13,10 +13,10 @@ h2 {
 }
 span {
   font-size: 36px;
-}
-label {
+} */
+/* label {
   font-size: 24px;
-}
+} */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   background: transparent;
