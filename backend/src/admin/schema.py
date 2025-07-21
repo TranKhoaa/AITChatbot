@@ -6,4 +6,4 @@ class AdminSchema(BaseModel):
     id: uuid.UUID
     name: str
     created_at: datetime
-    updated_at: datetime
+    updated_at: datetime    
