@@ -3,7 +3,7 @@ import store from "../app/store";
 import { setCredentials, logout } from "../features/auth/authSlice";
 
 const axiosInstance = axios.create({
-  baseURL: "/api/v1/",
+  baseURL: "http://localhost:8000/api/v1/",
   withCredentials: true, // Bắt buộc để gửi cookie
 });
 

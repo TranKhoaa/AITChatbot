@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import store from "../app/store";
 import {
   FaFolder,
   FaFolderOpen,
@@ -9,7 +10,7 @@ import {
 } from "react-icons/fa";
 import { MdClose } from 'react-icons/md';
 
-export default function UploadFile() {
+export default function UploadFile({ onClose }) {
   const [files, setFiles] = useState([]);
   const [expanded, setExpanded] = useState({});
   const hiddenInputRef = useRef();
@@ -130,11 +131,37 @@ export default function UploadFile() {
       })}
     </ul>
   );
+  const token = store.getState().auth.token;
+  const handleUpload = async () => {
+    if (files.length === 0) return;
 
-  const handleUpload = () => {
-    alert(`Uploading ${files.length} files`);
-    console.log(files.map((f) => f.file));
+    const formData = new FormData();
+    files.forEach(({ file }) => {
+      formData.append("files", file);
+    });
+
+    try {
+      const res = await fetch("/api/v1/admin/file/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+         headers: {
+            Authorization: `Bearer ${token}`,
+  },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        alert("Upload thành công");
+      } else {
+        alert("Lỗi khi upload!");
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("Đã xảy ra lỗi khi upload");
+    }
   };
+
 
   const handleCancel = () => {
     setFiles([]);
@@ -143,7 +170,7 @@ export default function UploadFile() {
   const tree = buildTree(files);
 
   return visible ? (
-    <main className="container w-[800px] h-[700px] mx-auto max-w-screen-lg">
+    <main className="fixed container w-[800px] h-[700px]">
       <article className="flex flex-col h-200 bg-black text-white shadow rounded-md p-4">
         <div class="flex justify-between">
           <h1 className="font-semibold text-lg mb-2 p-2 ml-4">Files/Folders Upload</h1>
