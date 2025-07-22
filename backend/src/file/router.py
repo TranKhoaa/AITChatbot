@@ -14,8 +14,7 @@ from sqlmodel import select
 from src.shared.schema import FileSchemaWithAdmin
 from typing import List
 import uuid
-from docx import Document
-from src.file.ultils import read_docx_file, chunk_text, vector_embedding_chunks
+from src.file.utils import read_docx_file, chunk_text, vector_embedding_chunks
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB limit
 UPLOAD_DIR = os.path.expanduser("./uploads")
