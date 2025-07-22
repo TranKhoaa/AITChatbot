@@ -14,8 +14,7 @@ from sqlmodel import select
 from src.shared.schema import FileSchemaWithAdmin
 from typing import List
 import uuid
-from docx import Document
-from src.file.ultils import read_docx_file, chunk_text, vector_embedding_chunks
+from src.file.utils import read_docx_file, chunk_text, vector_embedding_chunks
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB limit
 UPLOAD_DIR = os.path.expanduser("./uploads")
@@ -66,12 +65,43 @@ async def upload_files(
             )
             print(f"File metadata: {file_metadata}")
             session.add(file_metadata)
-            uploaded_files.append({"filename": file.filename, "status": "success"})
+            # uploaded_files.append({"filename": file.filename, "status": "success"})
+            await session.flush()  # ensures file_metadata.id is available
+
+            # Automatically embed if .docx
+            if filecontent_type == ".docx":
+                from src.chunk.model import Chunk
+                from src.file.ultils import read_docx_file, chunk_text, vector_embedding_chunks
+                from datetime import datetime
+
+                try:    
+                    text = read_docx_file(full_path)
+                    chunks = chunk_text(text)
+                    if not chunks:
+                        raise HTTPException(status_code=400, detail=f"No valid chunks extracted from {file.filename}")
+                    embeddings = vector_embedding_chunks(chunks)
+                    if len(chunks) != len(embeddings):
+                        raise HTTPException(status_code=500, detail=f"Mismatch between chunks and embeddings for {file.filename}")
+                    for chunk_content, embedding in zip(chunks, embeddings):
+                        chunk = Chunk(
+                            content=chunk_content,
+                            vector=embedding.tolist(),
+                            file_id=file_metadata.id,
+                            created_at=datetime.now(),
+                            updated_at=datetime.now(),
+                        )
+                        session.add(chunk)
+                except Exception as e:
+                    raise HTTPException(status_code=500, detail=f"Failed to embed {file.filename}: {str(e)}")
+
+            uploaded_files.append({"filename": file.filename, "status": "uploaded and embedded" if filecontent_type == ".docx" else "uploaded"})
 
         await session.commit()
         return {"files": uploaded_files}
+        await session.commit()
+        return {"files": uploaded_files}
     except Exception as e:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -84,7 +114,7 @@ async def list_files(session: AsyncSession = Depends(get_session)):
     files = await session.exec(statement)
     files_all = files.all()
     print(f"Files in database: {files_all}")
-    print(files_all[0].admin)
+    print(files_all[0].admin if files_all else "No files found")
     return files_all
 
 
@@ -102,79 +132,79 @@ async def download_file(file_id: uuid.UUID, session: AsyncSession = Depends(get_
         filename=os.path.basename(file_metadata.link),
         media_type=file_metadata.type,
     )
-@file_router.post("/embed")
-async def embed_files(
-    file_ids: List[uuid.UUID],
-    admin_detail: dict = Depends(AccessTokenBearerAdmin),
-    session: AsyncSession = Depends(get_session),
-):
-    """Chunk and embed selected .docx files, storing results in the database."""
-    try:
-        processed_files = []
-        for file_id in file_ids:
-            # Fetch file metadata
-            statement = select(File).where(File.id == file_id)
-            file_metadata = await session.exec(statement)
-            file_metadata = file_metadata.first()
-            if not file_metadata or not os.path.exists(file_metadata.link):
-                raise HTTPException(status_code=404, detail=f"File {file_id} not found")
+# @file_router.post("/embed")
+# async def embed_files(
+#     file_ids: List[uuid.UUID],
+#     admin_detail: dict = Depends(AccessTokenBearerAdmin),
+#     session: AsyncSession = Depends(get_session),
+# ):
+#     """Chunk and embed selected .docx files, storing results in the database."""
+#     try:
+#         processed_files = []
+#         for file_id in file_ids:
+#             # Fetch file metadata
+#             statement = select(File).where(File.id == file_id)
+#             file_metadata = await session.exec(statement)
+#             file_metadata = file_metadata.first()
+#             if not file_metadata or not os.path.exists(file_metadata.link):
+#                 raise HTTPException(status_code=404, detail=f"File {file_id} not found")
 
-            # Check if file is .docx
-            file_extension = file_metadata.type.lower()
-            if file_extension != ".docx":
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Only .docx files are supported for embedding, got {file_extension}"
-                )
+#             # Check if file is .docx
+#             file_extension = file_metadata.type.lower()
+#             if file_extension != ".docx":
+#                 raise HTTPException(
+#                     status_code=400,
+#                     detail=f"Only .docx files are supported for embedding, got {file_extension}"
+#                 )
 
-            # Extract text from .docx file
-            try:
-                text = read_docx_file(file_metadata.link)
-            except Exception as e:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Failed to extract text from {file_metadata.name}: {str(e)}"
-                )
+#             # Extract text from .docx file
+#             try:
+#                 text = read_docx_file(file_metadata.link)
+#             except Exception as e:
+#                 raise HTTPException(
+#                     status_code=400,
+#                     detail=f"Failed to extract text from {file_metadata.name}: {str(e)}"
+#                 )
 
-            # Chunk the text
-            chunks = chunk_text(text)
-            if not chunks:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"No valid chunks extracted from {file_metadata.name}"
-                )
+#             # Chunk the text
+#             chunks = chunk_text(text)
+#             if not chunks:
+#                 raise HTTPException(
+#                     status_code=400,
+#                     detail=f"No valid chunks extracted from {file_metadata.name}"
+#                 )
 
-            # Generate embeddings
-            try:
-                embeddings = vector_embedding_chunks(chunks)
-            except Exception as e:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Failed to generate embeddings for {file_metadata.name}: {str(e)}"
-                )
+#             # Generate embeddings
+#             try:
+#                 embeddings = vector_embedding_chunks(chunks)
+#             except Exception as e:
+#                 raise HTTPException(
+#                     status_code=400,
+#                     detail=f"Failed to generate embeddings for {file_metadata.name}: {str(e)}"
+#                 )
 
-            # Ensure chunks and embeddings are aligned
-            if len(chunks) != len(embeddings):
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Mismatch between chunks and embeddings for {file_metadata.name}"
-                )
+#             # Ensure chunks and embeddings are aligned
+#             if len(chunks) != len(embeddings):
+#                 raise HTTPException(
+#                     status_code=500,
+#                     detail=f"Mismatch between chunks and embeddings for {file_metadata.name}"
+#                 )
 
-            # Store chunks and embeddings
-            for chunk_content, embedding in zip(chunks, embeddings):
-                chunk = Chunk(
-                    content=chunk_content,
-                    vector=embedding.tolist(),  # Convert NumPy array to list for storage
-                    file_id=file_metadata.id,
-                    created_at=datetime.now(),
-                    updated_at=datetime.now(),
-                )
-                session.add(chunk)
+#             # Store chunks and embeddings
+#             for chunk_content, embedding in zip(chunks, embeddings):
+#                 chunk = Chunk(
+#                     content=chunk_content,
+#                     vector=embedding.tolist(),  # Convert NumPy array to list for storage
+#                     file_id=file_metadata.id,
+#                     created_at=datetime.now(),
+#                     updated_at=datetime.now(),
+#                 )
+#                 session.add(chunk)
 
-            processed_files.append({"file_id": file_id, "status": "embedded", "chunk_count": len(chunks)})
+#             processed_files.append({"file_id": file_id, "status": "embedded", "chunk_count": len(chunks)})
 
-        await session.commit()
-        return {"files": processed_files}
-    except Exception as e:
-        await session.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+#         await session.commit()
+#         return {"files": processed_files}
+#     except Exception as e:
+#         await session.rollback()
+#         raise HTTPException(status_code=500, detail=str(e))
