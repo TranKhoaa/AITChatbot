@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 import uuid
-import datetime
+from datetime import datetime
 
 
 class QuestionSchema(BaseModel):
@@ -14,9 +14,11 @@ class CreateChatSchema(BaseModel):
     """Request model for creating a new chat."""
     name: str = "New Chat"  
 
-# class ChatHistorySchema(BaseModel):
-#     """Response model for chat history endpoint."""
-#     id: uuid.UUID
-#     content:str
-#     source: str
-#     created_at: datetime
+class ChatHistorySchema(BaseModel):
+    """Response model for chat history endpoint."""
+    id: uuid.UUID
+    content:str
+    source: str
+    created_at: datetime
+    class Config:
+        orm_mode = True
