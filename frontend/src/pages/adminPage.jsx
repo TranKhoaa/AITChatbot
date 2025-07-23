@@ -38,7 +38,7 @@ const AdminPage = () => {
             />
           )}
           {isSettingsOpen && (
-            <SettingsModal onClose={() => setIsSettingsOpen(false)} />
+            <SettingsModal onClose={() => setIsUploadOpen(false)} />
           )}
           <FileManagement />
         </main>

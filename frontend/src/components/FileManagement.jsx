@@ -23,6 +23,22 @@ function FileManagement() {
         return "";
     }
   };
+  const handleDownloadFile = async (fileId) => {
+    try { 
+      const res = await axiosInstance.get(`admin/file/${fileId}`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", res.headers);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Lỗi khi tải file:", error);
+    }
+  };
 
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,11 +119,11 @@ function FileManagement() {
         <table className="w-full table-auto border-collapse text-left">
           <thead>
             <tr className="border-b border-slate-500 text-base md:text-lg">
-              <th className="pb-4">Name</th>
-              <th className="pb-4">Type</th>
-              <th className="pb-4">Date Created</th>
-              <th className="pb-4">Date Modified</th>
-              <th className="pb-4">Uploader</th>
+              <th className="pb-4 pr-4">Name</th>
+              <th className="pb-4 pr-4">Type</th>
+              <th className="pb-4 pr-4">Date Created</th>
+              <th className="pb-4 pr-4">Date Modified</th>
+              <th className="pb-4 pr-4">Uploader</th>
               <th className="pb-4 text-center">Actions</th>
             </tr>
           </thead>
@@ -119,13 +135,16 @@ function FileManagement() {
                     <img src={getIconByType(file.type)} alt="icon" className="w-5 h-5" />
                     {file.name}
                   </td>
-                  <td>{file.type}</td>
-                  <td>{file.created_at}</td>
-                  <td>{file.updated_at}</td>
-                  <td>{file.admin.name}</td>
+                  <td className="pr-2">{file.type}</td>
+                  <td className="pr-2">{file.created_at}</td>
+                  <td className="pr-2">{file.updated_at}</td>
+                  <td className="pr-2">{file.admin.name}</td>
                   <td className="text-center space-x-2">
-                    <button><AiOutlineDownload /></button>
-                    <button><AiOutlineDelete /></button>
+                    <button className="hover:text-gray-400 text-white"
+                    onClick={() => handleDownloadFile(file.id)}>
+                      <AiOutlineDownload className="h-5 w-5" /></button>
+                    <button className="hover:text-gray-400 text-white">
+                      <AiOutlineDelete className="h-5 w-5" /></button>
                   </td>
                 </tr>
               ))
