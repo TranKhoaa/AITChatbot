@@ -1,3 +1,4 @@
+from uuid import UUID
 from requests import session
 from fastapi import APIRouter, Depends, HTTPException, status
 from src.db.main import get_session
@@ -13,8 +14,8 @@ from src.db.vector_search import VectorSearch
 from .utils import question_embedding, construct_prompt, query_ollama, translate_to_vietnam
 from .schema import (
     QuestionSchema,
-    CreateChatSchema
-    # ChatHistorySchema
+    CreateChatSchema,
+    ChatHistorySchema
 )
 chat_router = APIRouter()
 
@@ -129,35 +130,35 @@ async def ask_question(
         await session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-# @chat_router.get("/{chat_id}/history")
-# async def get_chat_history(
-#     chat_id: ChatHistorySchema,
-#     user_detail: dict = Depends(AccessTokenBearerUser),
-#     session: AsyncSession = Depends(get_session),
-# ):
-#     """Retrieve the chat history for a given chat_id, ordered by creation time."""
-#     try:
-#         # Verify chat exists and belongs to the user
-#         statement = select(Chat).where(Chat.id == chat_id, Chat.user_id == user_detail["data"]["id"])
-#         result = await session.exec(statement)
-#         chat = result.first()
-#         if not chat:
-#             raise HTTPException(status_code=404, detail="Chat not found or not owned by user")
+@chat_router.get("/{chat_id}/history")
+async def get_chat_history(
+    chat_id: UUID,
+    user_detail: dict = Depends(AccessTokenBearerUser),
+    session: AsyncSession = Depends(get_session),
+):
+    """Retrieve the chat history for a given chat_id, ordered by creation time."""
+    try:
+        # Verify chat exists and belongs to the user
+        statement = select(Chat).where(Chat.id == chat_id, Chat.user_id == user_detail["data"]["id"])
+        result = await session.exec(statement)
+        chat = result.first()
+        if not chat:
+            raise HTTPException(status_code=404, detail="Chat not found or not owned by user")
 
-#         # Retrieve chat history, ordered by created_at
-#         history_statement = select(Chat_history).where(Chat_history.chat_id == chat_id).order_by(Chat_history.created_at)
-#         result = await session.exec(history_statement)
-#         history = result.all()
+        # Retrieve chat history, ordered by created_at
+        history_statement = select(Chat_history).where(Chat_history.chat_id == chat_id).order_by(Chat_history.created_at)
+        result = await session.exec(history_statement)
+        history = result.all()
 
-#         # Format response
-#         return [
-#             ChatHistorySchema(
-#                 id=entry.id,
-#                 content=entry.content,
-#                 source=entry.source,
-#                 created_at=entry.created_at
-#             )
-#             for entry in history
-#         ]
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Failed to retrieve chat history: {str(e)}")
+        # Format response
+        return [
+            ChatHistorySchema(
+                id=entry.id,
+                content=entry.content,
+                source=entry.source,
+                created_at=entry.created_at
+            )
+            for entry in history
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve chat history: {str(e)}")
