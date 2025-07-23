@@ -5,7 +5,7 @@ import re
 model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-mpnet-base-v2')
 
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "qwen3:0.6b"
+OLLAMA_MODEL = "qwen3:latest"
 
 def question_embedding(query: str, max_length=1024):
     question_vect = model.encode(query)

@@ -59,6 +59,26 @@ const App = () => {
               </PrivateRoute>
             }
           />
+          <Route
+            path="/chat/:chat_id"
+            element={
+              <PrivateRoute>
+                <div>
+                  <ChatHeader toggleSidebar={toggleSidebar} />
+                  <main className="flex top-16 h-fit bg-black">
+                    <ChatSidebar
+                      isSidebarOpen={isSidebarOpen}
+                      onOpenSettings={() => setIsSettingsOpen(true)}
+                    />
+                    {isSettingsOpen && (
+                      <SettingsModal onClose={() => setIsSettingsOpen(false)} />
+                    )}
+                    <Chat />
+                  </main>
+                </div>
+              </PrivateRoute>
+            }
+          />
 
           {/* Chỉ admin mới vào được */}
           <Route
