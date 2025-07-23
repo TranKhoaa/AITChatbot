@@ -11,13 +11,33 @@ from sqlmodel import select
 from typing import List, Optional
 from datetime import datetime
 from src.db.vector_search import VectorSearch
-from .utils import question_embedding, construct_prompt, query_ollama, translate_to_vietnam
-from .schema import (
-    QuestionSchema,
-    CreateChatSchema,
-    ChatHistorySchema
+from .utils import (
+    question_embedding,
+    construct_prompt,
+    query_ollama,
+    translate_to_vietnam,
 )
+from .schema import QuestionSchema, CreateChatSchema, ChatHistorySchema
+
 chat_router = APIRouter()
+
+
+@chat_router.get("/")
+async def get_chats(
+    user_detail: dict = Depends(AccessTokenBearerUser),
+    session: AsyncSession = Depends(get_session), 
+):
+    """Retrieve all chats for the authenticated user"""
+    try:
+        statement = select(Chat).where(Chat.user_id == user_detail["data"]["id"])
+        result = await session.exec(statement)
+        chats = result.all()
+        return [chat for chat in chats]
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to retrieve chats: {str(e)}"
+        )
+
 
 @chat_router.post("/create")
 async def create_chat(
@@ -41,6 +61,7 @@ async def create_chat(
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to create chat: {str(e)}")
 
+
 @chat_router.post("/ask")
 async def ask_question(
     request: QuestionSchema,
@@ -63,18 +84,24 @@ async def ask_question(
             chat_id = chat.id
         else:
             # Verify chat exists and belongs to the user
-            statement = select(Chat).where(Chat.id == request.chat_id, Chat.user_id == user_detail["data"]["id"])
+            statement = select(Chat).where(
+                Chat.id == request.chat_id, Chat.user_id == user_detail["data"]["id"]
+            )
             result = await session.exec(statement)
             chat = result.first()
             if not chat:
-                raise HTTPException(status_code=404, detail="Chat not found or not owned by user")
+                raise HTTPException(
+                    status_code=404, detail="Chat not found or not owned by user"
+                )
             chat_id = request.chat_id
 
         # Embed the question
         try:
             query_vector = question_embedding(request.question)
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Failed to embed question: {str(e)}")
+            raise HTTPException(
+                status_code=400, detail=f"Failed to embed question: {str(e)}"
+            )
 
         # Perform vector search for top 3 chunks
         vector_search = VectorSearch(session)
@@ -82,9 +109,9 @@ async def ask_question(
         similar_chunks = await vector_search.similarity_search_cosine(
             query_vector=query_vector,
             limit=3,
-            similarity_threshold=0.3  # Only chunks with >30% similarity
+            similarity_threshold=0.3,  # Only chunks with >30% similarity
         )
-    
+
         # Prepare context from chunks
         context = [chunk.content for chunk in similar_chunks]
         chunk_ids = [str(chunk.id) for chunk in similar_chunks]
@@ -94,10 +121,12 @@ async def ask_question(
             prompt = construct_prompt(request.question, context)
             answer = query_ollama(prompt)
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Failed to generate answer: {str(e)}")
+            raise HTTPException(
+                status_code=400, detail=f"Failed to generate answer: {str(e)}"
+            )
 
         # Translate answer to Vietnamese if requested
-        final_answer = translate_to_vietnam(answer) 
+        final_answer = translate_to_vietnam(answer)
 
         # Store question and answer in Chat_history
         question_entry = Chat_history(
@@ -124,11 +153,12 @@ async def ask_question(
             "chat_id": chat_id,
             "question": request.question,
             "answer": final_answer,
-            "chunk_ids": chunk_ids
+            "chunk_ids": chunk_ids,
         }
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @chat_router.get("/{chat_id}/history")
 async def get_chat_history(
@@ -139,14 +169,22 @@ async def get_chat_history(
     """Retrieve the chat history for a given chat_id, ordered by creation time."""
     try:
         # Verify chat exists and belongs to the user
-        statement = select(Chat).where(Chat.id == chat_id, Chat.user_id == user_detail["data"]["id"])
+        statement = select(Chat).where(
+            Chat.id == chat_id, Chat.user_id == user_detail["data"]["id"]
+        )
         result = await session.exec(statement)
         chat = result.first()
         if not chat:
-            raise HTTPException(status_code=404, detail="Chat not found or not owned by user")
+            raise HTTPException(
+                status_code=404, detail="Chat not found or not owned by user"
+            )
 
         # Retrieve chat history, ordered by created_at
-        history_statement = select(Chat_history).where(Chat_history.chat_id == chat_id).order_by(Chat_history.created_at)
+        history_statement = (
+            select(Chat_history)
+            .where(Chat_history.chat_id == chat_id)
+            .order_by(Chat_history.created_at)
+        )
         result = await session.exec(history_statement)
         history = result.all()
 
@@ -156,9 +194,11 @@ async def get_chat_history(
                 id=entry.id,
                 content=entry.content,
                 source=entry.source,
-                created_at=entry.created_at
+                created_at=entry.created_at,
             )
             for entry in history
         ]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve chat history: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to retrieve chat history: {str(e)}"
+        )
