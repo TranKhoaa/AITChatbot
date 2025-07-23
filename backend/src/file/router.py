@@ -14,7 +14,13 @@ from sqlmodel import select
 from src.shared.schema import FileSchemaWithAdmin
 from typing import List
 import uuid
-from src.file.utils import read_docx_file, chunk_text, vector_embedding_chunks
+from src.file.utils import (
+    read_docx_file,
+    read_pdf_file,
+    chunk_text, 
+    vector_embedding_chunks,
+    read_excel_file,
+    )
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB limit
 UPLOAD_DIR = os.path.expanduser("./uploads")
@@ -71,10 +77,8 @@ async def upload_files(
             await session.flush()  # ensures file_metadata.id is available
 
             # Automatically embed if .docx
-            if extension == ".docx":
-                from src.chunk.model import Chunk
-                from src.file.ultils import read_docx_file, chunk_text, vector_embedding_chunks
-                from datetime import datetime
+
+            if filecontent_type == ".docx":
 
                 try:    
                     text = read_docx_file(full_path)
@@ -95,8 +99,51 @@ async def upload_files(
                         session.add(chunk)
                 except Exception as e:
                     raise HTTPException(status_code=500, detail=f"Failed to embed {file.filename}: {str(e)}")
+            elif filecontent_type == ".pdf":
+                try:    
+                    text = read_pdf_file(full_path)
+                    chunks = chunk_text(text)
+                    if not chunks:
+                        raise HTTPException(status_code=400, detail=f"No valid chunks extracted from {file.filename}")
+                    embeddings = vector_embedding_chunks(chunks)
+                    if len(chunks) != len(embeddings):
+                        raise HTTPException(status_code=500, detail=f"Mismatch between chunks and embeddings for {file.filename}")
+                    for chunk_content, embedding in zip(chunks, embeddings):
+                        chunk = Chunk(
+                            content=chunk_content,
+                            vector=embedding.tolist(),
+                            file_id=file_metadata.id,
+                            created_at=datetime.now(),
+                            updated_at=datetime.now(),
+                        )
+                        session.add(chunk)
+                except Exception as e:
+                    raise HTTPException(status_code=500, detail=f"Failed to embed {file.filename}: {str(e)}")
+            elif filecontent_type == ".xlsx":
+                try:
+                    rows = read_excel_file(full_path)  # List of JSON strings, each row
+                    if not rows:
+                        raise HTTPException(status_code=400, detail=f"No valid rows extracted from {file.filename}")
+                    embeddings = vector_embedding_chunks(rows)
+                    if len(rows) != len(embeddings):
+                        raise HTTPException(status_code=500, detail=f"Mismatch between rows and embeddings for {file.filename}")
+                    for row_content, embedding in zip(rows, embeddings):
+                        chunk = Chunk(
+                            content=row_content,
+                            vector=embedding.tolist(),
+                            file_id=file_metadata.id,
+                            created_at=datetime.now(),
+                            updated_at=datetime.now(),
+                        )
+                        session.add(chunk)
+                except Exception as e:
+                    raise HTTPException(status_code=500, detail=f"Failed to embed {file.filename}: {str(e)}")    
+            else:
+                raise HTTPException(status_code=500, detail=f"File type is not supported {filecontent_type}")
 
-            uploaded_files.append({"filename": file.filename, "status": "uploaded and embedded" if extension == ".docx" else "uploaded"})
+
+            uploaded_files.append({"filename": file.filename, "status": "uploaded and embedded"})
+
 
         await session.commit()
         return {"files": uploaded_files}
