@@ -35,10 +35,11 @@ async def upload_files(
         for file in files:
             # Sanitize and construct file path
             relative_path = file.filename  # Maintain original folder structure
-            safe_filename = (
+            safe_filepath = (
                 os.path.normpath(relative_path).replace("..", "").lstrip("/")
             )
-            full_path = os.path.join(UPLOAD_DIR, safe_filename)
+            name_only = os.path.basename(safe_filepath)  # Get only the filename
+            full_path = os.path.join(UPLOAD_DIR, safe_filepath)
             os.makedirs(os.path.dirname(full_path), exist_ok=True)
 
             # Save file
@@ -57,7 +58,7 @@ async def upload_files(
             print(f"File metadata: {extension}")
 
             file_metadata = File(
-                name=file.filename,
+                name=name_only,
                 link=full_path,
                 type=extension,
                 media_type=media_type,
