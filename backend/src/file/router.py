@@ -41,10 +41,11 @@ async def upload_files(
         for file in files:
             # Sanitize and construct file path
             relative_path = file.filename  # Maintain original folder structure
-            safe_filename = (
+            safe_filepath = (
                 os.path.normpath(relative_path).replace("..", "").lstrip("/")
             )
-            full_path = os.path.join(UPLOAD_DIR, safe_filename)
+            name_only = os.path.basename(safe_filepath)  # Get only the filename
+            full_path = os.path.join(UPLOAD_DIR, safe_filepath)
             os.makedirs(os.path.dirname(full_path), exist_ok=True)
 
             # Save file
@@ -55,17 +56,18 @@ async def upload_files(
                 await out_file.write(content)
 
             # Save metadata
-            content_type = (
+            media_type = (
                 mimetypes.guess_type(file.filename)[0] or "application/octet-stream"
             )
             # get extension
-            filecontent_type = os.path.splitext(file.filename)[1].lower()
-            print(f"File metadata: {filecontent_type}")
+            extension = os.path.splitext(file.filename)[1].lower()
+            print(f"File metadata: {extension}")
 
             file_metadata = File(
-                name=file.filename,
+                name=name_only,
                 link=full_path,
-                type=filecontent_type,
+                type=extension,
+                media_type=media_type,
                 uploaded_by=admin_detail["data"]["id"],
                 chunks=[],
             )
@@ -75,7 +77,9 @@ async def upload_files(
             await session.flush()  # ensures file_metadata.id is available
 
             # Automatically embed if .docx
+
             if filecontent_type == ".docx":
+
                 try:    
                     text = read_docx_file(full_path)
                     chunks = chunk_text(text)
@@ -137,7 +141,9 @@ async def upload_files(
             else:
                 raise HTTPException(status_code=500, detail=f"File type is not supported {filecontent_type}")
 
+
             uploaded_files.append({"filename": file.filename, "status": "uploaded and embedded"})
+
 
         await session.commit()
         return {"files": uploaded_files}
@@ -172,8 +178,8 @@ async def download_file(file_id: uuid.UUID, session: AsyncSession = Depends(get_
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(
         path=file_metadata.link,
-        filename=os.path.basename(file_metadata.link),
-        media_type=file_metadata.type,
+        filename=file_metadata.name,  # Use original filename instead of basename
+        media_type=file_metadata.media_type,
     )
 # @file_router.post("/embed")
 # async def embed_files(
