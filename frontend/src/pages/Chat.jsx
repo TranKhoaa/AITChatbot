@@ -6,26 +6,42 @@ import { FaChevronDown } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axiosInstance from '../api/axiosInstance';
+import { useParams } from 'react-router-dom';
 
 const Chat = () => {
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState([]);
   const [messages, setMessages] = useState([]);
   const [chatId, setChatId] = useState(null);
-  useEffect(() => {
-  const createNewChat = async () => {
-    try {
-      const res = await axiosInstance.post(
-        "user/chat/create",
-        { name: "New Chat" },
-      );
-      setChatId(res.data.chat_id);
-    } catch (error) {
-      console.error("Failed to create chat:", error);
-    }
-  };
 
-  createNewChat();
-}, []);
+  const { chat_id } = useParams();
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const res = await axiosInstance.get(`/chat/${chatId}/messages`);
+        setMessage(res.data);
+      } catch (err) {
+        console.error("Lỗi khi tải lịch sử:", err);
+      }
+    };
+    fetchMessages();
+  }, [chatId]);
+
+
+  useEffect(() => {
+    const createNewChat = async () => {
+      try {
+        const res = await axiosInstance.post(
+          "user/chat/create",
+          { name: "New Chat" },
+        );
+        setChatId(res.data.chat_id);
+      } catch (error) {
+        console.error("Failed to create chat:", error);
+      }
+    };
+
+    createNewChat();
+  }, []);
 
   const AI_MODELS = [
     { id: "qwen3", name: "Qwen3" },
@@ -98,16 +114,16 @@ const Chat = () => {
             <div className="flex-1 p-4 md:p-6">
               <div className="space-y-6 max-w-4xl">
                 {messages.map((msg) => (
-                  <div key={msg.id} className={msg.type === "user" ? "flex justify-end" : "space-y-4"}>
+                  <div key={msg.id || index} className={msg.type === "user" ? "flex justify-end" : "space-y-4"}>
                     {msg.type === "user" ? (
                       <div className="flex items-end justify-end space-x-2 message-bubble">
                         <div className="max-w-xs">
                           <div className="chat-gradient bg-gray-700 rounded-2xl rounded-tr-sm p-3 shadow-lg">
                             <p className="text-white px-2 break-words">{msg.content}</p>
                           </div>
-                          <p className="flex space-x-2 text-xs mt-3 ml-2 justify-end"> 
+                          <p className="flex space-x-2 text-xs mt-3 ml-2 justify-end">
                             <button className='hover:text-gray-400 text-white' onClick={() => handleCopyMessage(msg.content)}>
-                              <MdContentCopy className='h-4 w-4'/>
+                              <MdContentCopy className='h-4 w-4' />
                             </button>
                           </p>
                         </div>
@@ -118,9 +134,9 @@ const Chat = () => {
                           <div className="rounded-2xl rounded-tl-sm p-0 shadow-lg">
                             <p className="text-white">{msg.content}</p>
                           </div>
-                          <p className="flex items-center gap-3 mt-4"> 
+                          <p className="flex items-center gap-3 mt-4">
                             <button className='hover:text-gray-400 text-white' onClick={() => handleCopyMessage(msg.content)}>
-                              <MdContentCopy className='h-4 w-4'/>
+                              <MdContentCopy className='h-4 w-4' />
                             </button>
                           </p>
                         </div>
