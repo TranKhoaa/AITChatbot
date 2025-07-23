@@ -7,11 +7,33 @@ import "../App.css"
 import { useNavigate} from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../features/auth/authSlice";
-const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
-  const chat_history = [
+import axiosInstance from "../api/axiosInstance";
+import { useState } from "react";
+
+const chat_history = [
     { id: "chat1", name: "grrr" },
     { id: "chat2", name: "........"}
   ];
+const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
+const [chats, setChats] = useState(chat_history);
+
+const createNewChat = async () => {
+  try {
+      const res = await axiosInstance.post(
+        "user/chat/create",
+        { name: "New Chat" },
+      );
+    if (res.status === 200 || res.status === 201) {
+      const newChat = res.data;
+      setChats((prev) => [...prev, newChat]);
+      navigate(`/chat/${newChat.chat_id}`);
+    }
+  } catch (err) {
+    console.error("Lỗi khi tạo chat:", err);
+    alert("Không thể tạo chat mới.");
+  }
+};
+
   const dispatch = useDispatch();
     const handleSignOut = () => {
         dispatch(logout());
@@ -40,12 +62,12 @@ const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
         {/* Main Navigation */}
         <div className="space-y-4">
             {/* New chat */}
-            <a
-            href="#"
+            <button
             className="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg bg-white text-black group transition-all duration-200 hover:bg-gray-400 w-full"
+            onClick={createNewChat}
             >
                 <FaPlus className="h-4 w-4 mr-3" />New chat
-            </a>
+            </button>
             {/* History */}
             <div className="space-y-1">
                 <a
