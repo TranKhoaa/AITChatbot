@@ -23,7 +23,7 @@ function FileManagement() {
         return "";
     }
   };
-  const handleDownloadFile = async (fileId) => {
+  const handleDownloadFile = async (fileId, fileName) => {
     try { 
       const res = await axiosInstance.get(`admin/file/${fileId}`, {
         responseType: "blob",
@@ -31,7 +31,7 @@ function FileManagement() {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", res.headers);
+      link.setAttribute("download", fileName);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -141,7 +141,7 @@ function FileManagement() {
                   <td className="pr-2">{file.admin.name}</td>
                   <td className="text-center space-x-2">
                     <button className="hover:text-gray-400 text-white"
-                    onClick={() => handleDownloadFile(file.id)}>
+                    onClick={() => handleDownloadFile(file.id, file.name)}>
                       <AiOutlineDownload className="h-5 w-5" /></button>
                     <button className="hover:text-gray-400 text-white">
                       <AiOutlineDelete className="h-5 w-5" /></button>
