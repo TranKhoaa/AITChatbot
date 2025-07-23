@@ -49,17 +49,18 @@ async def upload_files(
                 await out_file.write(content)
 
             # Save metadata
-            content_type = (
+            media_type = (
                 mimetypes.guess_type(file.filename)[0] or "application/octet-stream"
             )
             # get extension
-            filecontent_type = os.path.splitext(file.filename)[1].lower()
-            print(f"File metadata: {filecontent_type}")
+            extension = os.path.splitext(file.filename)[1].lower()
+            print(f"File metadata: {extension}")
 
             file_metadata = File(
                 name=file.filename,
                 link=full_path,
-                type=filecontent_type,
+                type=extension,
+                media_type=media_type,
                 uploaded_by=admin_detail["data"]["id"],
                 chunks=[],
             )
@@ -69,7 +70,7 @@ async def upload_files(
             await session.flush()  # ensures file_metadata.id is available
 
             # Automatically embed if .docx
-            if filecontent_type == ".docx":
+            if extension == ".docx":
                 from src.chunk.model import Chunk
                 from src.file.ultils import read_docx_file, chunk_text, vector_embedding_chunks
                 from datetime import datetime
@@ -94,7 +95,7 @@ async def upload_files(
                 except Exception as e:
                     raise HTTPException(status_code=500, detail=f"Failed to embed {file.filename}: {str(e)}")
 
-            uploaded_files.append({"filename": file.filename, "status": "uploaded and embedded" if filecontent_type == ".docx" else "uploaded"})
+            uploaded_files.append({"filename": file.filename, "status": "uploaded and embedded" if extension == ".docx" else "uploaded"})
 
         await session.commit()
         return {"files": uploaded_files}
@@ -129,8 +130,8 @@ async def download_file(file_id: uuid.UUID, session: AsyncSession = Depends(get_
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(
         path=file_metadata.link,
-        filename=os.path.basename(file_metadata.link),
-        media_type=file_metadata.type,
+        filename=file_metadata.name,  # Use original filename instead of basename
+        media_type=file_metadata.media_type,
     )
 # @file_router.post("/embed")
 # async def embed_files(

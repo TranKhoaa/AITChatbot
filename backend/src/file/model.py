@@ -18,6 +18,7 @@ class File(SQLModel, table=True):
     name: str = Field(sa_column=Column(pg.VARCHAR, nullable=False, unique=True))
     link: str
     type: str
+    media_type: str
     uploaded_by: uuid.UUID = Field(foreign_key="Admin.id", nullable=False)
     created_at: datetime = Field(sa_column=Column(pg.TIMESTAMP, default=datetime.now))
     updated_at: datetime = Field(sa_column=Column(pg.TIMESTAMP, default=datetime.now))
