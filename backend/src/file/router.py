@@ -82,47 +82,46 @@ async def upload_files(
     background_tasks: BackgroundTasks,
     files: List[UploadFile] = Depends(validate_file),
     admin_detail: dict = Depends(AccessTokenBearerAdmin),
-    session: AsyncSession = Depends(get_session),
 ):
-    try:
-        admin_id = admin_detail["data"]["id"]
+    
+    admin_id = admin_detail["data"]["id"]
 
-        files_info_list: FileInfoList = []
-        for file in files:
-            # Sanitize and construct file path
-            relative_path = file.filename  # Maintain original folder structure
-            safe_filepath = (
-                os.path.normpath(relative_path).replace("..", "").lstrip("/")
-            )
-            full_path = os.path.join(UPLOAD_DIR, safe_filepath)
-            # only get the filename, not the full path
-            safe_filename = os.path.basename(safe_filepath)
+    files_info_list: FileInfoList = []
+    for file in files:
+        # Sanitize and construct file path
+        relative_path = file.filename  # Maintain original folder structure
+        safe_filepath = (
+            os.path.normpath(relative_path).replace("..", "").lstrip("/")
+        )
+        full_path = os.path.join(UPLOAD_DIR, safe_filepath)
+        # only get the filename, not the full path
+        safe_filename = os.path.basename(safe_filepath)
 
-            content = await file.read()
-            media_type = (
-                mimetypes.guess_type(file.filename)[0] or "application/octet-stream"
-            )
-            extension = os.path.splitext(file.filename)[1].lower()
+        content = await file.read()
+        media_type = (
+            mimetypes.guess_type(file.filename)[0] or "application/octet-stream"
+        )
+        extension = os.path.splitext(file.filename)[1].lower()
 
-            files_info_list.append(
-                {
-                    "filename": safe_filename,
-                    "full_path": full_path,
-                    "extension": extension,
-                    "content": content,
-                    "media_type": media_type,
-                }
-            )
-
-        # Thêm task vào background tasks để xử lý bất đồng bộ
-        background_tasks.add_task(
-            process_files_in_background, files_info_list, admin_id, Config.DATABASE_URL
+        files_info_list.append(
+            {
+                "filename": safe_filename,
+                "full_path": full_path,
+                "extension": extension,
+                "content": content,
+                "media_type": media_type,
+            }
         )
 
-        return {
-            "message": "Files are being processed in the background. You will be notified upon completion.",
-            "files": [{"filename": file.filename} for file in files],
-        }
+    # Thêm task vào background tasks để xử lý bất đồng bộ
+    background_tasks.add_task(
+        process_files_in_background, files_info_list, admin_id, Config.DATABASE_URL
+    )
+
+    return {
+        "message": "Files are being processed in the background. You will be notified upon completion.",
+        "files": [{"filename": file.filename} for file in files],
+    }
 #             name_only = os.path.basename(safe_filepath)  # Get only the filename
 #             full_path = os.path.join(UPLOAD_DIR, safe_filepath)
 #             os.makedirs(os.path.dirname(full_path), exist_ok=True)
