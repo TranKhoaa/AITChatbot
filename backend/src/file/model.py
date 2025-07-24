@@ -19,6 +19,7 @@ class File(SQLModel, table=True):
     link: str
     type: str
     media_type: str
+    deleted: bool = Field(sa_column=Column(pg.BOOLEAN, default=False))
     uploaded_by: uuid.UUID = Field(foreign_key="Admin.id", nullable=False)
     created_at: datetime = Field(sa_column=Column(pg.TIMESTAMP, default=datetime.now))
     updated_at: datetime = Field(sa_column=Column(pg.TIMESTAMP, default=datetime.now))
@@ -33,4 +34,4 @@ class File(SQLModel, table=True):
     )
 
     def __repr__(self):
-        return f"<File {self.name} uploaded by {self.uploaded_by} at {self.created_at}, updated at {self.updated_at}>"
+        return f"<File {self.name} uploaded by {self.uploaded_by} at {self.created_at}, updated at {self.updated_at}>, deleted: {self.deleted}>"

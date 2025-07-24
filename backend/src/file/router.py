@@ -22,10 +22,11 @@ from typing import List
 import uuid
 from src.file.service import process_files, FileInfoList
 from src.config import Config
+
 # from src.file.utils import (
 #     read_docx_file,
 #     read_pdf_file,
-#     chunk_text, 
+#     chunk_text,
 #     vector_embedding_chunks,
 #     read_excel_file,
 # )
@@ -83,16 +84,14 @@ async def upload_files(
     files: List[UploadFile] = Depends(validate_file),
     admin_detail: dict = Depends(AccessTokenBearerAdmin),
 ):
-    
+
     admin_id = admin_detail["data"]["id"]
 
     files_info_list: FileInfoList = []
     for file in files:
         # Sanitize and construct file path
         relative_path = file.filename  # Maintain original folder structure
-        safe_filepath = (
-            os.path.normpath(relative_path).replace("..", "").lstrip("/")
-        )
+        safe_filepath = os.path.normpath(relative_path).replace("..", "").lstrip("/")
         full_path = os.path.join(UPLOAD_DIR, safe_filepath)
         # only get the filename, not the full path
         safe_filename = os.path.basename(safe_filepath)
@@ -122,6 +121,8 @@ async def upload_files(
         "message": "Files are being processed in the background. You will be notified upon completion.",
         "files": [{"filename": file.filename} for file in files],
     }
+
+
 #             name_only = os.path.basename(safe_filepath)  # Get only the filename
 #             full_path = os.path.join(UPLOAD_DIR, safe_filepath)
 #             os.makedirs(os.path.dirname(full_path), exist_ok=True)
@@ -158,7 +159,7 @@ async def upload_files(
 
 #             if filecontent_type == ".docx":
 
-#                 try:    
+#                 try:
 #                     text = read_docx_file(full_path)
 #                     chunks = chunk_text(text)
 #                     if not chunks:
@@ -178,7 +179,7 @@ async def upload_files(
 #                 except Exception as e:
 #                     raise HTTPException(status_code=500, detail=f"Failed to embed {file.filename}: {str(e)}")
 #             elif filecontent_type == ".pdf":
-#                 try:    
+#                 try:
 #                     text = read_pdf_file(full_path)
 #                     chunks = chunk_text(text)
 #                     if not chunks:
@@ -215,7 +216,7 @@ async def upload_files(
 #                         )
 #                         session.add(chunk)
 #                 except Exception as e:
-#                     raise HTTPException(status_code=500, detail=f"Failed to embed {file.filename}: {str(e)}")    
+#                     raise HTTPException(status_code=500, detail=f"Failed to embed {file.filename}: {str(e)}")
 #             else:
 #                 raise HTTPException(status_code=500, detail=f"File type is not supported {filecontent_type}")
 
@@ -236,7 +237,7 @@ async def upload_files(
 async def list_files(session: AsyncSession = Depends(get_session)):
     """List all uploaded files."""
 
-    statement = select(File).order_by(File.name)
+    statement = select(File).where(File.deleted == False).order_by(File.name)
 
     files = await session.exec(statement)
     files_all = files.all()
@@ -251,7 +252,7 @@ async def download_file(
 ):
     """Download a file by its ID."""
 
-    statement = select(File).where(File.id == file_id)
+    statement = select(File).where(File.id == file_id and File.deleted == False)
     file_metadata = await session.exec(statement)
     file_metadata = file_metadata.first()
     if not file_metadata or not os.path.exists(file_metadata.link):
@@ -261,6 +262,33 @@ async def download_file(
         filename=file_metadata.name,  # Use original filename instead of basename
         media_type=file_metadata.media_type,
     )
+
+
+@file_router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def soft_delete_file(
+    file_id: uuid.UUID,
+    admin_detail: dict = Depends(AccessTokenBearerAdmin),
+    session: AsyncSession = Depends(get_session),
+):
+    """Soft delete a file by its ID."""
+    statement = select(File).where(File.id == file_id)
+    file_metadata = await session.exec(statement)
+    file_metadata = file_metadata.first()
+
+    if not file_metadata:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # if file_metadata.uploaded_by != admin_detail["data"]["id"]:
+    #     raise HTTPException(
+    #         status_code=403, detail="You do not have permission to delete this file"
+    #     )
+
+    # Soft delete by setting deleted flag
+    file_metadata.deleted = True
+    session.add(file_metadata)
+    await session.commit()
+
+    return {"message": "File soft deleted successfully"}
 
 
 # @file_router.post("/embed")
