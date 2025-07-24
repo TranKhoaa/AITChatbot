@@ -42,9 +42,8 @@ def process_files(
     )
 
     async def _process():
-        result = []
-        async with session_maker() as session:
-            for file in files:
+        async def _process_file(file: FileInfo):
+            async with session_maker() as session:
                 try:
                     filename = file["filename"]
                     full_path = file["full_path"]
@@ -92,27 +91,28 @@ def process_files(
                             session.add(chunk)
                             await session.commit()
 
-                    result.append(
-                        {
-                            "filename": filename,
-                            "status": "success",
-                            "file_id": file_id,
-                        }
-                    )
+                    return {
+                        "filename": filename,
+                        "status": "success",
+                        "file_id": file_id,
+                    }
+
                 except Exception as e:
                     logger.error(f"Failed to process {filename}: {str(e)}")
-                    result.append(
-                        {
-                            "filename": filename,
-                            "status": "failed",
-                            "error": str(e),
-                        }
-                    )
                     if os.path.exists(full_path):
                         os.remove(full_path)
                     await session.rollback()
+                    return {
+                        "filename": filename,
+                        "status": "failed",
+                        "error": str(e),
+                    }
+
+        tasks = [_process_file(file) for file in files]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
 
         await engine.dispose()  # Đóng engine sau khi hoàn tất
-        return result
+        print(results)
+        return results
 
     return asyncio.run(_process())

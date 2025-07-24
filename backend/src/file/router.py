@@ -84,14 +84,12 @@ async def upload_files(
     files: List[UploadFile] = Depends(validate_file),
     admin_detail: dict = Depends(AccessTokenBearerAdmin),
 ):
-
-    admin_id = admin_detail["data"]["id"]
-
-    files_info_list: FileInfoList = []
-    for file in files:
+    async def get_file_info(file: UploadFile):
         # Sanitize and construct file path
         relative_path = file.filename  # Maintain original folder structure
-        safe_filepath = os.path.normpath(relative_path).replace("..", "").lstrip("/")
+        safe_filepath = (
+            os.path.normpath(relative_path).replace("..", "").lstrip("/")
+        )
         full_path = os.path.join(UPLOAD_DIR, safe_filepath)
         # only get the filename, not the full path
         safe_filename = os.path.basename(safe_filepath)
@@ -102,15 +100,20 @@ async def upload_files(
         )
         extension = os.path.splitext(file.filename)[1].lower()
 
-        files_info_list.append(
-            {
-                "filename": safe_filename,
-                "full_path": full_path,
-                "extension": extension,
-                "content": content,
-                "media_type": media_type,
-            }
-        )
+        return {
+            "filename": safe_filename,
+            "full_path": full_path,
+            "extension": extension,
+            "content": content,
+            "media_type": media_type,
+        }
+    
+    get_file_info_tasks = [
+        get_file_info(file) for file in files
+    ]
+    files_info_list = await asyncio.gather(*get_file_info_tasks)
+
+    admin_id = admin_detail["data"]["id"]
 
     # Thêm task vào background tasks để xử lý bất đồng bộ
     background_tasks.add_task(
