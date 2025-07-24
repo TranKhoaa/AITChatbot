@@ -12,37 +12,37 @@ const Chat = () => {
   const [message, setMessage] = useState([]);
   const [messages, setMessages] = useState([]);
   const [chatId, setChatId] = useState(null);
-
   const { chat_id } = useParams();
   useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const res = await axiosInstance.get(`/chat/${chatId}/messages`);
-        setMessage(res.data);
-      } catch (err) {
-        console.error("Lỗi khi tải lịch sử:", err);
-      }
-    };
-    fetchMessages();
-  }, [chatId]);
+  const createNewChat = async () => {
+    try {
+      const res = await axiosInstance.post("user/chat/create", { name: "New Chat" });
+      setChatId(res.data.id);
+    } catch (error) {
+      console.error("Failed to create chat:", error);
+    }
+  };
 
+  if (!chat_id) {
+    createNewChat();
+  } else {
+    setChatId(chat_id);
+  }
+}, [chat_id]);
 
   useEffect(() => {
-    const createNewChat = async () => {
-      try {
-        const res = await axiosInstance.post(
-          "user/chat/create",
-          { name: "New Chat" },
-        );
-        setChatId(res.data.chat_id);
-      } catch (error) {
-        console.error("Failed to create chat:", error);
-      }
-    };
+  const fetchMessages = async () => {
+    try {
+      if (!chatId) return;
+      const res = await axiosInstance.get(`user/chat/${chatId}/history`);
+      setMessages(res.data);
+    } catch (err) {
+      console.error("Lỗi khi tải lịch sử:", err);
+    }
+  };
 
-    createNewChat();
-  }, []);
-
+  fetchMessages();
+}, [chatId]);
   const AI_MODELS = [
     { id: "qwen3", name: "Qwen3" },
     { id: "gpt4", name: "GPT-4" },
@@ -72,7 +72,7 @@ const Chat = () => {
     if (!message.trim()) return;
     const userMessage = {
       id: messages.length + 1,
-      type: "user",
+      source: "user",
       content: message
     };
     setMessages(prev => [...prev, userMessage]);
@@ -83,12 +83,12 @@ const Chat = () => {
         chat_id: chatId,
         question: message,
       });
-
+      // console.log(userMessage.type);
       const { answer, chat_id } = res.data;
       setChatId(chat_id);
       const aiResponse = {
         id: messages.length + 2,
-        type: "ai",
+        source: "ai",
         content: answer
       };
       setMessages(prev => [...prev, aiResponse]);
@@ -114,12 +114,13 @@ const Chat = () => {
             <div className="flex-1 p-4 md:p-6">
               <div className="space-y-6 max-w-4xl">
                 {messages.map((msg) => (
-                  <div key={msg.id || index} className={msg.type === "user" ? "flex justify-end" : "space-y-4"}>
-                    {msg.type === "user" ? (
+                  <div key={msg.id} className={msg.source === "user" ? "flex justify-end" : "space-y-4"}>
+                    {msg.source === "user" ? (
                       <div className="flex items-end justify-end space-x-2 message-bubble">
                         <div className="max-w-xs">
                           <div className="chat-gradient bg-gray-700 rounded-2xl rounded-tr-sm p-3 shadow-lg">
                             <p className="text-white px-2 break-words">{msg.content}</p>
+                      
                           </div>
                           <p className="flex space-x-2 text-xs mt-3 ml-2 justify-end">
                             <button className='hover:text-gray-400 text-white' onClick={() => handleCopyMessage(msg.content)}>
@@ -147,7 +148,7 @@ const Chat = () => {
               </div>
             </div>
           </div>
-
+          {/* Chat Input */}
           <div className="relative grid-rows-2 grid grid-flow-col w-150 self-center m-4 bg-gray-800 rounded-xl p-4 max-w-4xl items-center">
             <textarea
               value={message}
@@ -158,6 +159,7 @@ const Chat = () => {
               style={{ resize: "none", minHeight: "40px", maxHeight: "120px", overflowY: "auto" }}
               className="bg-transparent border-none text-white placeholder:text-white/40 focus:ring-hidden outline-none w-full custom-scrollbar"
             />
+            {/* Model Dropdown */}
             <div className="relative">
               <div className="items-center gap-2 p-1">
                 <button
