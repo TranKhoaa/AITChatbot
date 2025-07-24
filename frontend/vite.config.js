@@ -7,10 +7,11 @@ export default defineConfig({
   plugins: [
     react(), tailwindcss()
   ],
-  base: '/static/', // để build đúng đường dẫn tương đối
+  base: '/', // để build đúng đường dẫn tương đối
   build: {
     outDir: '../backend/static',
-    emptyOutDir: true
+    emptyOutDir: true,
+    assetsDir: 'assets',
   },
 })
 

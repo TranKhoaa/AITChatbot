@@ -2,6 +2,7 @@
 Vector search utilities for RAG system optimization
 """
 from sqlmodel import Session, select, text
+from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import List, Optional
 from ..chunk.model import Chunk
 
@@ -12,7 +13,7 @@ class VectorSearch:
     def __init__(self, session: Session):
         self.session = session
     
-    def similarity_search_cosine(
+    async def similarity_search_cosine(
         self, 
         query_vector: List[float], 
         limit: int = 5,
@@ -42,9 +43,10 @@ class VectorSearch:
             query = query.where(Chunk.vector.cosine_distance(query_vector) <= distance_threshold)
         
         query = query.limit(limit)
-        return self.session.exec(query).all()
+        result = await self.session.exec(query)
+        return result.all()
     
-    def similarity_search_l2(
+    async def similarity_search_l2(
         self, 
         query_vector: List[float], 
         limit: int = 5,
@@ -69,9 +71,10 @@ class VectorSearch:
             query = query.where(Chunk.vector.l2_distance(query_vector) <= distance_threshold)
         
         query = query.limit(limit)
-        return self.session.exec(query).all()
+        result = await self.session.exec(query)
+        return result.all()
     
-    def similarity_search_with_score(
+    async def similarity_search_with_score(
         self, 
         query_vector: List[float], 
         limit: int = 5,
@@ -100,13 +103,16 @@ class VectorSearch:
                 LIMIT :limit
             """)
         
-        result = self.session.exec(
+        result = await self.session.exec(
             query, 
-            {"query_vector": query_vector, "limit": limit}
-        ).all()
-        
+            {
+                "query_vector": query_vector, 
+                "limit": limit
+            }
+        )
+        rows = result.all()
         chunks_with_scores = []
-        for row in result:
+        for row in rows:
             # Convert row to Chunk object (excluding the score)
             chunk_data = {
                 "id": row.id,
@@ -121,18 +127,18 @@ class VectorSearch:
         
         return chunks_with_scores
     
-    def optimize_search_parameters(self):
+    async def optimize_search_parameters(self):
         """
         Set optimal search parameters for pgvector indexes
         Call this before performing searches for better performance
         """
         # Optimize for HNSW indexes
-        self.session.exec(text("SET hnsw.ef_search = 64"))
+        await self.session.exec(text("SET hnsw.ef_search = 64"))
         
         # Optimize for IVFFlat indexes (if using)
-        self.session.exec(text("SET ivfflat.probes = 20"))
+        await self.session.exec(text("SET ivfflat.probes = 20"))
     
-    def get_index_stats(self) -> dict:
+    async def get_index_stats(self) -> dict:
         """Get statistics about vector indexes for monitoring performance"""
         stats = {}
         
@@ -143,7 +149,7 @@ class VectorSearch:
             WHERE tablename = 'Chunk' 
             AND indexname LIKE '%vector%'
         """)
-        indexes = self.session.exec(index_query).all()
+        indexes = await self.session.exec(index_query).all()
         stats["indexes"] = [{"name": idx.indexname, "table": idx.tablename} for idx in indexes]
         
         # Get table statistics
@@ -159,7 +165,7 @@ class VectorSearch:
             FROM pg_stat_user_tables 
             WHERE tablename = 'Chunk'
         """)
-        table_result = self.session.exec(table_stats).first()
+        table_result = await self.session.exec(table_stats).first()
         if table_result:
             stats["table_stats"] = {
                 "live_tuples": table_result.live_tuples,
@@ -176,7 +182,7 @@ class VectorSearch:
 def rag_search_example(session: Session, query_embedding: List[float]):
     """Example of how to use vector search in a RAG system"""
     vector_search = VectorSearch(session)
-    
+
     # Optimize search parameters
     vector_search.optimize_search_parameters()
     

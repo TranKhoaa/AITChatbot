@@ -1,4 +1,6 @@
 import React, { useState, useRef } from "react";
+import store from "../app/store";
+import axiosInstance from "../api/axiosInstance";
 import {
   FaFolder,
   FaFolderOpen,
@@ -9,7 +11,7 @@ import {
 } from "react-icons/fa";
 import { MdClose } from 'react-icons/md';
 
-export default function UploadFile() {
+export default function UploadFile({ onClose }) {
   const [files, setFiles] = useState([]);
   const [expanded, setExpanded] = useState({});
   const hiddenInputRef = useRef();
@@ -130,11 +132,34 @@ export default function UploadFile() {
       })}
     </ul>
   );
+  const token = store.getState().auth.token;
+  const handleUpload = async () => {
+    if (files.length === 0) return;
 
-  const handleUpload = () => {
-    alert(`Uploading ${files.length} files`);
-    console.log(files.map((f) => f.file));
+    const formData = new FormData();
+    files.forEach(({ file }) => {
+      formData.append("files", file);
+    });
+
+    try {
+      const res = await axiosInstance.post("admin/file/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      console.log(res);
+      if (res.request.status === 200) {
+        // const data = await res.json();
+        alert("Upload thành công");
+      } else {
+        alert("Lỗi khi upload!");
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("Đã xảy ra lỗi khi upload");
+    }
   };
+
 
   const handleCancel = () => {
     setFiles([]);
@@ -143,16 +168,16 @@ export default function UploadFile() {
   const tree = buildTree(files);
 
   return visible ? (
-    <main className="container w-[800px] h-[700px] mx-auto max-w-screen-lg">
-      <article className="flex flex-col h-200 bg-black text-white shadow rounded-md p-4">
+    <main className="fixed top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md container w-[800px] h-200">
+      <article className="flex flex-col h-200 bg-gray-900 text-white p-4">
         <div class="flex justify-between">
           <h1 className="font-semibold text-lg mb-2 p-2 ml-4">Files/Folders Upload</h1>
           <button
-            onClick={() => setVisible(false)}
-            className="top-1 right-1 absolute text-gray-500 hover:text-black"
+            onClick={onClose}
+            className="top-1 right-1 absolute text-gray-500 hover:text-gray-600"
             title="Close"
           >
-          <MdClose className="text-2xl" />
+            <MdClose className="text-2xl h-7 w-7" />
           </button>
         </div>
         <section className="m-4 p-6 border-2 border-white/40 rounded-2xl h-120 overflow-auto w-180 self-center">
@@ -185,7 +210,7 @@ export default function UploadFile() {
           </button>
         </header>
 
-        
+
 
         <footer className="flex justify-end mt-4">
           <button
