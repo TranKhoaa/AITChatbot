@@ -1,15 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    UploadFile,
+    BackgroundTasks,
+)
+from concurrent.futures import ProcessPoolExecutor
 from fastapi.responses import FileResponse
 from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from .dependency import validate_file
 from src.auth.dependency import AccessTokenBearerAdmin
 import os
-import aiofiles
+import asyncio
 import mimetypes
 from src.file.model import File
-from src.chunk.model import Chunk
-from datetime import datetime
 from sqlmodel import select
 from src.shared.schema import FileSchemaWithAdmin
 from typing import List
@@ -21,6 +27,17 @@ from src.file.utils import (
     vector_embedding_chunks,
     # read_excel_file,
     )
+from src.file.service import process_files, FileInfoList
+from src.config import Config
+
+# from src.file.utils import (
+#     read_docx_file,
+#     read_pdf_file,
+#     chunk_text,
+#     vector_embedding_chunks,
+#     read_excel_file,
+# )
+
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB limit
 UPLOAD_DIR = os.path.expanduser("./uploads")
@@ -30,135 +47,207 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)  # Create directory if it doesn't exist
 file_router = APIRouter()
 
 
-@file_router.post("/upload")
+async def process_files_in_background(
+    files_info_list: FileInfoList, admin_id: str, database_url: str
+):
+    """
+    Hàm chạy trong background để xử lý files mà không làm nghẽn API
+    """
+    import time
+
+    try:
+        print(f"Starting background processing for {len(files_info_list)} files...")
+        start_time = time.time()
+
+        # Sử dụng ProcessPoolExecutor trong background task
+        with ProcessPoolExecutor() as executor:
+            loop = asyncio.get_event_loop()
+
+            # Chạy process_files trong executor
+            result = await loop.run_in_executor(
+                executor, process_files, files_info_list, admin_id, database_url
+            )
+
+        end_time = time.time()
+        duration = end_time - start_time
+
+        print(f"Background file processing completed in {duration:.2f} seconds")
+        print(f"Processing result: {result}")
+
+        # Ở đây bạn có thể thêm logic để gửi thông báo WebSocket
+        # hoặc update database về trạng thái xử lý
+
+        return result
+
+    except Exception as e:
+        print(f"Error in background file processing: {str(e)}")
+        # Có thể log error hoặc gửi thông báo lỗi qua WebSocket
+        return {"error": str(e)}
+
+
+@file_router.post("/upload", status_code=status.HTTP_202_ACCEPTED)
 async def upload_files(
+    background_tasks: BackgroundTasks,
     files: List[UploadFile] = Depends(validate_file),
     admin_detail: dict = Depends(AccessTokenBearerAdmin),
-    session: AsyncSession = Depends(get_session),
 ):
-    try:
-        uploaded_files = []
-        for file in files:
-            # Sanitize and construct file path
-            relative_path = file.filename  # Maintain original folder structure
-            safe_filepath = (
-                os.path.normpath(relative_path).replace("..", "").lstrip("/")
-            )
-            name_only = os.path.basename(safe_filepath)  # Get only the filename
-            full_path = os.path.join(UPLOAD_DIR, safe_filepath)
-            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    async def get_file_info(file: UploadFile):
+        # Sanitize and construct file path
+        relative_path = file.filename  # Maintain original folder structure
+        safe_filepath = (
+            os.path.normpath(relative_path).replace("..", "").lstrip("/")
+        )
+        full_path = os.path.join(UPLOAD_DIR, safe_filepath)
+        # only get the filename, not the full path
+        safe_filename = os.path.basename(safe_filepath)
 
-            # Save file
-            async with aiofiles.open(full_path, "wb") as out_file:
-                content = await file.read()
-                if len(content) > MAX_FILE_SIZE:
-                    raise HTTPException(status_code=400, detail="File too large")
-                await out_file.write(content)
+        content = await file.read()
+        media_type = (
+            mimetypes.guess_type(file.filename)[0] or "application/octet-stream"
+        )
+        extension = os.path.splitext(file.filename)[1].lower()
 
-            # Save metadata
-            media_type = (
-                mimetypes.guess_type(file.filename)[0] or "application/octet-stream"
-            )
-            # get extension
-            extension = os.path.splitext(file.filename)[1].lower()
-            print(f"File metadata: {extension}")
+        return {
+            "filename": safe_filename,
+            "full_path": full_path,
+            "extension": extension,
+            "content": content,
+            "media_type": media_type,
+        }
+    
+    get_file_info_tasks = [
+        get_file_info(file) for file in files
+    ]
+    files_info_list = await asyncio.gather(*get_file_info_tasks)
 
-            file_metadata = File(
-                name=name_only,
-                link=full_path,
-                type=extension,
-                media_type=media_type,
-                uploaded_by=admin_detail["data"]["id"],
-                chunks=[],
-            )
-            print(f"File metadata: {file_metadata}")
-            session.add(file_metadata)
-            # uploaded_files.append({"filename": file.filename, "status": "success"})
-            await session.flush()  # ensures file_metadata.id is available
+    admin_id = admin_detail["data"]["id"]
 
-            # Automatically embed if .docx
+    # Thêm task vào background tasks để xử lý bất đồng bộ
+    background_tasks.add_task(
+        process_files_in_background, files_info_list, admin_id, Config.DATABASE_URL
+    )
 
-            if filecontent_type == ".docx":
-
-                try:    
-                    text = read_docx_file(full_path)
-                    chunks = chunk_text(text)
-                    if not chunks:
-                        raise HTTPException(status_code=400, detail=f"No valid chunks extracted from {file.filename}")
-                    embeddings = vector_embedding_chunks(chunks)
-                    if len(chunks) != len(embeddings):
-                        raise HTTPException(status_code=500, detail=f"Mismatch between chunks and embeddings for {file.filename}")
-                    for chunk_content, embedding in zip(chunks, embeddings):
-                        chunk = Chunk(
-                            content=chunk_content,
-                            vector=embedding.tolist(),
-                            file_id=file_metadata.id,
-                            created_at=datetime.now(),
-                            updated_at=datetime.now(),
-                        )
-                        session.add(chunk)
-                except Exception as e:
-                    raise HTTPException(status_code=500, detail=f"Failed to embed {file.filename}: {str(e)}")
-            elif filecontent_type == ".pdf":
-                try:    
-                    text = read_pdf_file(full_path)
-                    chunks = chunk_text(text)
-                    if not chunks:
-                        raise HTTPException(status_code=400, detail=f"No valid chunks extracted from {file.filename}")
-                    embeddings = vector_embedding_chunks(chunks)
-                    if len(chunks) != len(embeddings):
-                        raise HTTPException(status_code=500, detail=f"Mismatch between chunks and embeddings for {file.filename}")
-                    for chunk_content, embedding in zip(chunks, embeddings):
-                        chunk = Chunk(
-                            content=chunk_content,
-                            vector=embedding.tolist(),
-                            file_id=file_metadata.id,
-                            created_at=datetime.now(),
-                            updated_at=datetime.now(),
-                        )
-                        session.add(chunk)
-                except Exception as e:
-                    raise HTTPException(status_code=500, detail=f"Failed to embed {file.filename}: {str(e)}")
-            elif filecontent_type == ".xlsx":
-                try:
-                    rows = read_excel_file(full_path)  # List of JSON strings, each row
-                    if not rows:
-                        raise HTTPException(status_code=400, detail=f"No valid rows extracted from {file.filename}")
-                    embeddings = vector_embedding_chunks(rows)
-                    if len(rows) != len(embeddings):
-                        raise HTTPException(status_code=500, detail=f"Mismatch between rows and embeddings for {file.filename}")
-                    for row_content, embedding in zip(rows, embeddings):
-                        chunk = Chunk(
-                            content=row_content,
-                            vector=embedding.tolist(),
-                            file_id=file_metadata.id,
-                            created_at=datetime.now(),
-                            updated_at=datetime.now(),
-                        )
-                        session.add(chunk)
-                except Exception as e:
-                    raise HTTPException(status_code=500, detail=f"Failed to embed {file.filename}: {str(e)}")    
-            else:
-                raise HTTPException(status_code=500, detail=f"File type is not supported {filecontent_type}")
+    return {
+        "message": "Files are being processed in the background. You will be notified upon completion.",
+        "files": [{"filename": file.filename} for file in files],
+    }
 
 
-            uploaded_files.append({"filename": file.filename, "status": "uploaded and embedded"})
+#             name_only = os.path.basename(safe_filepath)  # Get only the filename
+#             full_path = os.path.join(UPLOAD_DIR, safe_filepath)
+#             os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+#             # Save file
+#             async with aiofiles.open(full_path, "wb") as out_file:
+#                 content = await file.read()
+#                 if len(content) > MAX_FILE_SIZE:
+#                     raise HTTPException(status_code=400, detail="File too large")
+#                 await out_file.write(content)
+
+#             # Save metadata
+#             media_type = (
+#                 mimetypes.guess_type(file.filename)[0] or "application/octet-stream"
+#             )
+#             # get extension
+#             extension = os.path.splitext(file.filename)[1].lower()
+#             print(f"File metadata: {extension}")
+
+#             file_metadata = File(
+#                 name=name_only,
+#                 link=full_path,
+#                 type=extension,
+#                 media_type=media_type,
+#                 uploaded_by=admin_detail["data"]["id"],
+#                 chunks=[],
+#             )
+#             print(f"File metadata: {file_metadata}")
+#             session.add(file_metadata)
+#             # uploaded_files.append({"filename": file.filename, "status": "success"})
+#             await session.flush()  # ensures file_metadata.id is available
+
+#             # Automatically embed if .docx
+
+#             if filecontent_type == ".docx":
+
+#                 try:
+#                     text = read_docx_file(full_path)
+#                     chunks = chunk_text(text)
+#                     if not chunks:
+#                         raise HTTPException(status_code=400, detail=f"No valid chunks extracted from {file.filename}")
+#                     embeddings = vector_embedding_chunks(chunks)
+#                     if len(chunks) != len(embeddings):
+#                         raise HTTPException(status_code=500, detail=f"Mismatch between chunks and embeddings for {file.filename}")
+#                     for chunk_content, embedding in zip(chunks, embeddings):
+#                         chunk = Chunk(
+#                             content=chunk_content,
+#                             vector=embedding.tolist(),
+#                             file_id=file_metadata.id,
+#                             created_at=datetime.now(),
+#                             updated_at=datetime.now(),
+#                         )
+#                         session.add(chunk)
+#                 except Exception as e:
+#                     raise HTTPException(status_code=500, detail=f"Failed to embed {file.filename}: {str(e)}")
+#             elif filecontent_type == ".pdf":
+#                 try:
+#                     text = read_pdf_file(full_path)
+#                     chunks = chunk_text(text)
+#                     if not chunks:
+#                         raise HTTPException(status_code=400, detail=f"No valid chunks extracted from {file.filename}")
+#                     embeddings = vector_embedding_chunks(chunks)
+#                     if len(chunks) != len(embeddings):
+#                         raise HTTPException(status_code=500, detail=f"Mismatch between chunks and embeddings for {file.filename}")
+#                     for chunk_content, embedding in zip(chunks, embeddings):
+#                         chunk = Chunk(
+#                             content=chunk_content,
+#                             vector=embedding.tolist(),
+#                             file_id=file_metadata.id,
+#                             created_at=datetime.now(),
+#                             updated_at=datetime.now(),
+#                         )
+#                         session.add(chunk)
+#                 except Exception as e:
+#                     raise HTTPException(status_code=500, detail=f"Failed to embed {file.filename}: {str(e)}")
+#             elif filecontent_type == ".xlsx":
+#                 try:
+#                     rows = read_excel_file(full_path)  # List of JSON strings, each row
+#                     if not rows:
+#                         raise HTTPException(status_code=400, detail=f"No valid rows extracted from {file.filename}")
+#                     embeddings = vector_embedding_chunks(rows)
+#                     if len(rows) != len(embeddings):
+#                         raise HTTPException(status_code=500, detail=f"Mismatch between rows and embeddings for {file.filename}")
+#                     for row_content, embedding in zip(rows, embeddings):
+#                         chunk = Chunk(
+#                             content=row_content,
+#                             vector=embedding.tolist(),
+#                             file_id=file_metadata.id,
+#                             created_at=datetime.now(),
+#                             updated_at=datetime.now(),
+#                         )
+#                         session.add(chunk)
+#                 except Exception as e:
+#                     raise HTTPException(status_code=500, detail=f"Failed to embed {file.filename}: {str(e)}")
+#             else:
+#                 raise HTTPException(status_code=500, detail=f"File type is not supported {filecontent_type}")
 
 
-        await session.commit()
-        return {"files": uploaded_files}
-        await session.commit()
-        return {"files": uploaded_files}
-    except Exception as e:
-        await session.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+#             uploaded_files.append({"filename": file.filename, "status": "uploaded and embedded"})
+
+
+#         await session.commit()
+#         return {"files": uploaded_files}
+#         await session.commit()
+#         return {"files": uploaded_files}
+#     except Exception as e:
+#         await session.rollback()
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 @file_router.get("/", response_model=List[FileSchemaWithAdmin])
 async def list_files(session: AsyncSession = Depends(get_session)):
     """List all uploaded files."""
 
-    statement = select(File).order_by(File.name)
+    statement = select(File).where(File.deleted == False).order_by(File.name)
 
     files = await session.exec(statement)
     files_all = files.all()
@@ -168,10 +257,12 @@ async def list_files(session: AsyncSession = Depends(get_session)):
 
 
 @file_router.get("/{file_id}")
-async def download_file(file_id: uuid.UUID, session: AsyncSession = Depends(get_session)):
+async def download_file(
+    file_id: uuid.UUID, session: AsyncSession = Depends(get_session)
+):
     """Download a file by its ID."""
 
-    statement = select(File).where(File.id == file_id)
+    statement = select(File).where(File.id == file_id and File.deleted == False)
     file_metadata = await session.exec(statement)
     file_metadata = file_metadata.first()
     if not file_metadata or not os.path.exists(file_metadata.link):
@@ -181,6 +272,35 @@ async def download_file(file_id: uuid.UUID, session: AsyncSession = Depends(get_
         filename=file_metadata.name,  # Use original filename instead of basename
         media_type=file_metadata.media_type,
     )
+
+
+@file_router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def soft_delete_file(
+    file_id: uuid.UUID,
+    admin_detail: dict = Depends(AccessTokenBearerAdmin),
+    session: AsyncSession = Depends(get_session),
+):
+    """Soft delete a file by its ID."""
+    statement = select(File).where(File.id == file_id)
+    file_metadata = await session.exec(statement)
+    file_metadata = file_metadata.first()
+
+    if not file_metadata:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # if file_metadata.uploaded_by != admin_detail["data"]["id"]:
+    #     raise HTTPException(
+    #         status_code=403, detail="You do not have permission to delete this file"
+    #     )
+
+    # Soft delete by setting deleted flag
+    file_metadata.deleted = True
+    session.add(file_metadata)
+    await session.commit()
+
+    return {"message": "File soft deleted successfully"}
+
+
 # @file_router.post("/embed")
 # async def embed_files(
 #     file_ids: List[uuid.UUID],
