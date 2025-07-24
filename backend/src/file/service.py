@@ -9,7 +9,13 @@ import aiofiles
 import os
 import logging
 from src.chunk.model import Chunk
-from src.file.utils import read_docx_file, chunk_text, vector_embedding_chunks
+from src.file.utils import (
+    read_docx_file,
+    read_pdf_file,
+    read_excel_file,
+    chunk_text,
+    vector_embedding_chunks,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -73,23 +79,32 @@ def process_files(
                     if extension == ".docx":
                         text = read_docx_file(full_path)
                         chunks = chunk_text(text)
-                        if not chunks:
-                            raise Exception(
-                                f"No valid chunks extracted from {filename}"
-                            )
-                        embeddings = vector_embedding_chunks(chunks)
-                        if len(chunks) != len(embeddings):
-                            raise Exception(
-                                f"Mismatch between chunks and embeddings for {filename}"
-                            )
-                        for chunk_content, embedding in zip(chunks, embeddings):
-                            chunk = Chunk(
-                                content=chunk_content,
-                                vector=embedding.tolist(),
-                                file_id=file_metadata.id,
-                            )
-                            session.add(chunk)
-                            await session.commit()
+                    elif extension == ".pdf":
+                        text = read_pdf_file(full_path)
+                        chunks = chunk_text(text)
+                    elif extension in [".xls", ".xlsx"]:
+                        rows = read_excel_file(full_path)
+                        if not rows:
+                            raise Exception(f"No valid rows found in {filename}")
+                        chunks = chunk_text("\n".join(rows))
+                    else:
+                        raise Exception(f"Unsupported file type: {extension}")
+                    
+                    if not chunks:
+                        raise Exception(f"No valid chunks extracted from {filename}")
+                    embeddings = vector_embedding_chunks(chunks)
+                    if len(chunks) != len(embeddings):
+                        raise Exception(
+                            f"Mismatch between chunks and embeddings for {filename}"
+                        )
+                    for chunk_content, embedding in zip(chunks, embeddings):
+                        chunk = Chunk(
+                            content=chunk_content,
+                            vector=embedding.tolist(),
+                            file_id=file_metadata.id,
+                        )
+                        session.add(chunk)
+                        await session.commit()
 
                     return {
                         "filename": filename,
