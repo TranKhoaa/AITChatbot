@@ -9,9 +9,14 @@ import { useDispatch } from "react-redux";
 import { logout } from "../features/auth/authSlice";
 import axiosInstance from "../api/axiosInstance";
 import { useState, useEffect } from "react";
+import NewChatModal from './NewChatModal';
+import SettingsModal from './Settings';
 
-const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
+const ChatSidebar = ({ isSidebarOpen }) => {
     const [chats, setChats] = useState([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
     useEffect(() => {
         const fetchChats = async () => {
             try {
@@ -24,23 +29,6 @@ const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
 
         fetchChats();
     }, []);
-    const createNewChat = async () => {
-        try {
-            const res = await axiosInstance.post(
-                "user/chat/create",
-                { name: "New Chat" },
-            );
-            if (res.status === 200 || res.status === 201) {
-                const newChat = res.data;
-                setChats(prev => [...prev, { id: newChat.chat_id, name: newChat.name }]);
-                navigate(`/chat/${newChat.chat_id}`);
-            }
-        } catch (err) {
-            console.error("Lỗi khi tạo chat:", err);
-            alert("Không thể tạo chat mới.");
-        }
-    };
-
     const dispatch = useDispatch();
     const handleSignOut = () => {
         dispatch(logout());
@@ -48,9 +36,18 @@ const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
     };
     const navigate = useNavigate()
     return (
-        <div className={`flex transition-transform ease-in-out duration-400 ${isSidebarOpen ? "w-fit" : "w-0"}`}>
+        <div className={`flex flex-col transition-transform ease-in-out duration-400 ${isSidebarOpen ? "w-fit" : "w-0"}`}>
             <div className="mx-auto w-fit min-w-64">
-                {/* Sidebar */}
+                {isModalOpen && (
+                    <NewChatModal
+                        onClose={() => setIsModalOpen(false)}
+                        setChats={setChats}
+                    />
+                )}            
+                {isSettingsOpen && (
+                    <SettingsModal onClose={() => setIsSettingsOpen(false)} />
+                )}   
+                 {/* Sidebar */}
                 <aside className="fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-black text-white sm:translate-x-0">
                     {/* Search Bar */}
                     <div className="p-3 mt-4">
@@ -71,7 +68,7 @@ const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
                             {/* New chat */}
                             <button
                                 className="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg bg-white text-black group transition-all duration-200 hover:bg-gray-400 w-full"
-                                onClick={createNewChat}
+                                onClick={() => setIsModalOpen(true)}
                             >
                                 <FaPlus className="h-4 w-4 mr-3" />New chat
                             </button>
@@ -89,18 +86,19 @@ const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
                                     >
                                         Today
                                     </a>
-                                    {/* Chat History */}
-                                    {chats.map((chat) => (
-                                        <div key={chat.chat_id}>
-                                            <button
-                                                className="flex mt-2 items-center px-4 text-sm font-medium rounded-l text-gray-400 transition-all duration-200 w-full hover:text-white"
-                                                onClick={() => navigate(`/chat/${chat.id}`)}
-                                            >
-                                                {chat.name || "Unnamed Chat"}
-                                            </button>
-                                        </div>
-                                    ))}
-
+                                    <div className="flex-1 h-150 overflow-x-hidden overflow-y-auto custom-scrollbar pb-24 justify-center">
+                                        {/* Chat History */}
+                                        {chats.map((chat) => (
+                                            <div key={chat.chat_id}>
+                                                <button
+                                                    className="flex mt-2 items-center px-4 text-sm font-medium rounded-l text-gray-400 transition-all duration-200 w-full hover:text-white custom-scrollbar"
+                                                    onClick={() => navigate(`/chat/${chat.id}`)}
+                                                >
+                                                    {chat.name || "Unnamed Chat"}
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -120,7 +118,7 @@ const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
                             <div className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white group transition-all duration-200 bottom-2">
                                 <button
                                     className="flex items-center px-4 py-2.5 text-sm font-medium text-white duration-200"
-                                    onClick={onOpenSettings}
+                                    onClick={() => setIsSettingsOpen(true)}
                                 >
                                     <IoMdSettings className="h-5 w-5 mr-3"></IoMdSettings>Settings
                                 </button>
@@ -131,5 +129,6 @@ const ChatSidebar = ({ isSidebarOpen, onOpenSettings }) => {
             </div>
         </div>
     );
+
 };
 export default ChatSidebar;

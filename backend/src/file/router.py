@@ -16,10 +16,10 @@ from typing import List
 import uuid
 from src.file.utils import (
     read_docx_file,
-    read_pdf_file,
+    # read_pdf_file,
     chunk_text, 
     vector_embedding_chunks,
-    read_excel_file,
+    # read_excel_file,
     )
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB limit

@@ -149,7 +149,7 @@ const Chat = () => {
             </div>
           </div>
           {/* Chat Input */}
-          <div className="relative grid-rows-2 grid grid-flow-col w-150 self-center m-4 bg-gray-800 rounded-xl p-4 max-w-4xl items-center">
+          <div className="relative grid-rows-2 grid grid-flow-col w-150 self-center m-4 bg-gray-800 rounded-xl pb-3 pt-5 px-6 max-w-4xl items-center">
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
