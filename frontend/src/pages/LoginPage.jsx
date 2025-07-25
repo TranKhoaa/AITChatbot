@@ -1,4 +1,5 @@
 import { useState, React } from "react";
+
 import Header from "../components/Header";
 import illustration from "../assets/illustration.svg";
 import circleUp from "../assets/vector_up.svg";
@@ -9,8 +10,6 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setCredentials, setError } from "../features/auth/authSlice";
 import { loginUser, loginAdmin } from "../features/auth/authAPI";
-import axiosInstance from '../api/axiosInstance';
-
 function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
@@ -19,24 +18,12 @@ function LoginPage() {
   const [usernameError, setUsernameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [loginError, setLoginError] = useState("");
-  const [chats, setChats] = useState([]);
-
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
+  
   const togglePass = (e) => {
     e.preventDefault();
     setShowPassword(!showPassword);
-  };
-
-  const getLatestChatId = (chatList) => {
-    if (!Array.isArray(chatList) || chatList.length === 0) return null;
-
-    const sorted = [...chatList].sort(
-      (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
-    );
-
-    return sorted[0].id;
   };
 
   const handleSubmit = async (e) => {
@@ -64,7 +51,7 @@ function LoginPage() {
       const response = isAdmin
         ? await loginAdmin(credentials)
         : await loginUser(credentials);
-
+        console.log("Login response: ", response);
       dispatch(
         setCredentials({
           id: response.id,
@@ -73,27 +60,7 @@ function LoginPage() {
           access_token: response.access_token,
         })
       );
-
-      if (response.role === "admin") {
-        navigate("/admin");
-      } else {
-        // Gọi API lấy danh sách chat và tìm cuộc trò chuyện gần nhất
-        try {
-          const res = await axiosInstance.get("/user/chat/");
-          const chatList = res.data;
-          console.log(chatList)
-
-          const latestChatId = getLatestChatId(chatList);
-          if (latestChatId) {
-            navigate(`/chat/${latestChatId}`);
-          } else {
-            navigate("/chat"); // Nếu chưa có chat nào
-          }
-        } catch (err) {
-          console.error("Failed to fetch chat list:", err);
-          navigate("/chat");
-        }
-      }
+    navigate(response.role === "admin" ? "/admin" : "/chat");
     } catch (err) {
       if (err.status === 401) {
         setLoginError("Your username or password is incorrect.");
@@ -115,10 +82,11 @@ function LoginPage() {
               </label>
               <input
                 type="text"
-                className={`input-text focus:outline-none ${usernameError
-                  ? "border border-red-500 focus:border-red-500 "
-                  : "border border-slate-300 focus:border-slate-500  "
-                  }`}
+                className={`input-text focus:outline-none ${
+                  usernameError
+                    ? "border border-red-500 focus:border-red-500 "
+                    : "border border-slate-300 focus:border-slate-500  "
+                }`}
                 onChange={(e) => setUsername(e.target.value)}
               />
               {usernameError && (
@@ -144,10 +112,11 @@ function LoginPage() {
               </div>
               <input
                 type={showPassword ? "text" : "password"}
-                className={`input-text focus:outline-none ${passwordError
-                  ? "border border-red-500 focus:border-red-500 "
-                  : "border border-slate-300 focus:border-slate-500  "
-                  }`}
+                className={`input-text focus:outline-none ${
+                  passwordError
+                    ? "border border-red-500 focus:border-red-500 "
+                    : "border border-slate-300 focus:border-slate-500  "
+                }`}
                 onChange={(e) => setPassword(e.target.value)}
               />
               {passwordError && (
@@ -220,7 +189,7 @@ function LoginPage() {
             </span> */}
           </div>
         </form>
-
+      
       </div>
     </AuthLayout>
   );

@@ -12,10 +12,10 @@ const Chat = () => {
   const [message, setMessage] = useState([]);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-
   const { chat_id } = useParams();
   const [chatId, setChatId] = useState(chat_id);
   const navigate = useNavigate();
+
   const createNewChat = async () => {
     try {
       const res = await axiosInstance.post("user/chat/create", { name: "New Chat" });
@@ -27,18 +27,23 @@ const Chat = () => {
     }
   };
 
+  // useEffect(() => {
+  //   if (!chat_id) {
+  //     createNewChat();
+  //   } else {
+  //     setChatId(chat_id);
+  //   }
+  // }, [chat_id]);
+
   useEffect(() => {
-    if (!chat_id) {
-      createNewChat();
-    } else {
-      setChatId(chat_id);
-    }
+    setChatId(chat_id);
   }, [chat_id]);
 
   useEffect(() => {
+    if (!chatId) return;
+
     const fetchMessages = async () => {
       try {
-        if (!chatId) return;
         const res = await axiosInstance.get(`user/chat/${chatId}/history`);
         setMessages(res.data);
       } catch (err) {
@@ -46,8 +51,15 @@ const Chat = () => {
       }
     };
 
-    fetchMessages();
+    // Optional: delay nhỏ để tránh race condition
+    const timeout = setTimeout(() => {
+      fetchMessages();
+    }, 300);
+
+    return () => clearTimeout(timeout);
   }, [chatId]);
+
+
   const AI_MODELS = [
     { id: "qwen3", name: "Qwen3" },
     { id: "gpt4", name: "GPT-4" },
@@ -75,6 +87,7 @@ const Chat = () => {
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;
+
     const userMessage = {
       id: messages.length + 1,
       source: "user",
@@ -93,24 +106,37 @@ const Chat = () => {
 
     try {
       const res = await axiosInstance.post("user/chat/ask", {
-        chat_id: chatId,
+        chat_id: chatId, // ban đầu có thể là undefined nếu chưa tạo
         question: message,
       });
-      const { answer, chat_id } = res.data;
-      setChatId(chat_id);
-      setMessages(prev => prev.map(msg =>
-        msg.id === "loading"
-          ? { id: messages.length + 2, source: "ai", content: answer }
-          : msg
-      ));
+
+      const { answer, chat_id: returnedChatId } = res.data;
+
+      // Nếu chatId chưa có (lần đầu tạo), cập nhật chatId và route
+      if (!chatId) {
+        setChatId(returnedChatId);
+        navigate(`/chat/${returnedChatId}`); // đổi URL
+      }
+
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === "loading"
+            ? { id: messages.length + 2, source: "ai", content: answer }
+            : msg
+        )
+      );
     } catch (err) {
       toast.error("Error communicating with server");
       console.error(err);
 
       // Xoá "loading" nếu lỗi
       setMessages(prev => prev.filter(msg => msg.id !== "loading"));
+    } finally {
+      setIsLoading(false);
     }
   };
+
+
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
