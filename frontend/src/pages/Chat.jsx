@@ -6,25 +6,28 @@ import { FaChevronDown } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axiosInstance from '../api/axiosInstance';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const Chat = () => {
   const [message, setMessage] = useState([]);
   const [messages, setMessages] = useState([]);
-  const [chatId, setChatId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const { chat_id } = useParams();
-  useEffect(() => {
-    const createNewChat = async () => {
-      try {
-        const res = await axiosInstance.post("user/chat/create", { name: "New Chat" });
-        setChatId(res.data.id);
-      } catch (error) {
-        console.error("Failed to create chat:", error);
-      }
-    };
+  const [chatId, setChatId] = useState(chat_id);
+  const navigate = useNavigate();
+  const createNewChat = async () => {
+    try {
+      const res = await axiosInstance.post("user/chat/create", { name: "New Chat" });
+      const newChatId = res.data.chat_id;
+      setChatId(newChatId);
+      navigate(`${newChatId}`);
+    } catch (error) {
+      console.error("Failed to create chat:", error);
+    }
+  };
 
+  useEffect(() => {
     if (!chat_id) {
       createNewChat();
     } else {

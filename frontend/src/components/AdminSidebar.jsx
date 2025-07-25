@@ -11,10 +11,6 @@ import { useDispatch } from "react-redux";
 import { logout } from "../features/auth/authSlice";
 import { NavLink } from "react-router-dom";
 const AdminSidebar = ({ isSidebarOpen, onOpenSettings }) => {
-  const chat_history = [
-    { id: "chat1", name: "grrr" },
-    { id: "chat2", name: "........"}
-  ];
   const dispatch = useDispatch();
     const handleSignOut = () => {
         dispatch(logout());

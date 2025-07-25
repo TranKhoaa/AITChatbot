@@ -21,7 +21,10 @@ const ChatSidebar = ({ isSidebarOpen }) => {
         const fetchChats = async () => {
             try {
                 const res = await axiosInstance.get("/user/chat/");
-                setChats(res.data); // [{chat_id, name}]
+                const sortedChats = [...res.data].sort(
+                    (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
+                );
+                setChats(sortedChats); // Chat mới nhất nằm trên đầu
             } catch (err) {
                 console.error("Error when getting chat list:", err);
             }
@@ -29,6 +32,7 @@ const ChatSidebar = ({ isSidebarOpen }) => {
 
         fetchChats();
     }, []);
+
     const dispatch = useDispatch();
     const handleSignOut = () => {
         dispatch(logout());
@@ -43,11 +47,11 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                         onClose={() => setIsModalOpen(false)}
                         setChats={setChats}
                     />
-                )}            
+                )}
                 {isSettingsOpen && (
                     <SettingsModal onClose={() => setIsSettingsOpen(false)} />
-                )}   
-                 {/* Sidebar */}
+                )}
+                {/* Sidebar */}
                 <aside className="fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-black text-white sm:translate-x-0">
                     {/* Search Bar */}
                     <div className="p-3 mt-4">
