@@ -19,10 +19,13 @@ class File(SQLModel, table=True):
     link: str
     type: str
     media_type: str
+    hash: str = Field(sa_column=Column(pg.VARCHAR, nullable=False, unique=True))
     deleted: bool = Field(sa_column=Column(pg.BOOLEAN, default=False))
     uploaded_by: uuid.UUID = Field(foreign_key="Admin.id", nullable=False)
     created_at: datetime = Field(sa_column=Column(pg.TIMESTAMP, default=datetime.now))
-    updated_at: datetime = Field(sa_column=Column(pg.TIMESTAMP, default=datetime.now))
+    updated_at: datetime = Field(
+        sa_column=Column(pg.TIMESTAMP, default=datetime.now, onupdate=datetime.now)
+    )
     chunks: List["Chunk"] = Relationship(
         back_populates="file",
     )

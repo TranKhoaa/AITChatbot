@@ -18,7 +18,9 @@ class Chat(SQLModel, table=True):
     name: str
     user_id: uuid.UUID = Field(foreign_key="User.id", nullable=False)
     created_at: datetime = Field(sa_column=Column(pg.TIMESTAMP, default=datetime.now))
-    updated_at: datetime = Field(sa_column=Column(pg.TIMESTAMP, default=datetime.now))
+    updated_at: datetime = Field(
+        sa_column=Column(pg.TIMESTAMP, default=datetime.now, onupdate=datetime.now)
+    )
     chat_history: List["Chat_history"] = Relationship(
         back_populates="chat",
     )
