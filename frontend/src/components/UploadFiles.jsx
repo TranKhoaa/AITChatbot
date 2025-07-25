@@ -14,14 +14,15 @@ import { MdClose } from 'react-icons/md';
 export default function UploadFile({ onClose }) {
   const [files, setFiles] = useState([]);
   const [expanded, setExpanded] = useState({});
-  const hiddenInputRef = useRef();
+  const fileInputRef = useRef();
+  const folderInputRef = useRef();
+
 
   const handleFiles = (selectedFiles) => {
     const allowedTypes = [
       "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "text/plain",
     ];
 
     const newFiles = Array.from(selectedFiles)
@@ -148,15 +149,16 @@ export default function UploadFile({ onClose }) {
         },
       })
       console.log(res);
-      if (res.request.status === 200) {
+      if (res.request.status === 200 || res.request.status === 201 || res.request.status === 202) {
         // const data = await res.json();
-        alert("Upload thành công");
+        alert("Upload successful");
+        onClose();
       } else {
-        alert("Lỗi khi upload!");
+        alert("Error uploading!");
       }
     } catch (err) {
       console.error("Upload error:", err);
-      alert("Đã xảy ra lỗi khi upload");
+      alert("An error occurred while uploading.");
     }
   };
 
@@ -174,7 +176,7 @@ export default function UploadFile({ onClose }) {
           <h1 className="font-semibold text-lg mb-2 p-2 ml-4">Files/Folders Upload</h1>
           <button
             onClick={onClose}
-            className="top-1 right-1 absolute text-gray-500 hover:text-gray-600"
+            className="top-1 p-4 right-1 absolute text-gray-500 hover:text-gray-600"
             title="Close"
           >
             <MdClose className="text-2xl h-7 w-7" />
@@ -187,41 +189,57 @@ export default function UploadFile({ onClose }) {
             renderTree(tree)
           )}
         </section>
-        <header className="mt-6 w-180 self-center h-50 bottom-0 border-dashed rounded-2xl border-2 border-white/50 py-6 flex flex-col items-center justify-center">
-          <p className="mb-2 font-semibold text-gray-400">
-            Drag & drop files/folders or
-          </p>
-          <input
-            ref={hiddenInputRef}
-            type="file"
-            multiple
-            webkitdirectory="true"
-            className="hidden"
-            onChange={(e) => handleFiles(e.target.files)}
-          />
-          <button
-            onClick={() => {
-              hiddenInputRef.current.value = null;
-              hiddenInputRef.current.click();
-            }}
-            className="rounded px-3 py-1 bg-gray-800 hover:bg-gray-600"
-          >
-            Select Files/Folders
-          </button>
-        </header>
+        <div className="flex flex-row justify-center m-6 gap-x-4">
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => handleFiles(e.target.files)}
+            />
+            <button
+              onClick={() => {
+                fileInputRef.current.value = null;
+                fileInputRef.current.click();
+              }}
+              className="rounded-2xl h-15 w-40 px-3 py-1 bg-gray-800 hover:bg-gray-600"
+            >
+              Select Files
+            </button>
+          </div>
+          <div>
+            <input
+              ref={folderInputRef}
+              type="file"
+              multiple
+              webkitdirectory="true"
+              className="hidden"
+              onChange={(e) => handleFiles(e.target.files)}
+            />
+            <button
+              onClick={() => {
+                folderInputRef.current.value = null;
+                folderInputRef.current.click();
+              }}
+              className="rounded-2xl h-15 w-40 px-3 py-1 bg-gray-800 hover:bg-gray-600"
+            >
+              Select Folders
+            </button>
+          </div>
+        </div>
 
 
-
-        <footer className="flex justify-end mt-4">
+        <footer className="flex justify-end mt-4 mb-4 h-15 gap-x-3">
           <button
             onClick={handleUpload}
-            className="rounded px-3 py-1 bg-gray-800 hover:bg-gray-600 text-white"
+            className="rounded p-6 py-1 bg-gray-800 hover:bg-gray-600 text-white"
           >
             Upload Now
           </button>
           <button
             onClick={handleCancel}
-            className="ml-3 rounded px-3 py-1 bg-gray-800 hover:bg-gray-600"
+            className="rounded p-6 py-1 bg-gray-800 hover:bg-gray-600"
           >
             Cancel
           </button>

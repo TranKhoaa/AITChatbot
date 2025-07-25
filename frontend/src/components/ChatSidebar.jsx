@@ -23,7 +23,7 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                 const res = await axiosInstance.get("/user/chat/");
                 setChats(res.data); // [{chat_id, name}]
             } catch (err) {
-                console.error("Lỗi khi lấy danh sách chat:", err);
+                console.error("Error when getting chat list:", err);
             }
         };
 

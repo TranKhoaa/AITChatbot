@@ -12,37 +12,39 @@ const Chat = () => {
   const [message, setMessage] = useState([]);
   const [messages, setMessages] = useState([]);
   const [chatId, setChatId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const { chat_id } = useParams();
   useEffect(() => {
-  const createNewChat = async () => {
-    try {
-      const res = await axiosInstance.post("user/chat/create", { name: "New Chat" });
-      setChatId(res.data.id);
-    } catch (error) {
-      console.error("Failed to create chat:", error);
-    }
-  };
+    const createNewChat = async () => {
+      try {
+        const res = await axiosInstance.post("user/chat/create", { name: "New Chat" });
+        setChatId(res.data.id);
+      } catch (error) {
+        console.error("Failed to create chat:", error);
+      }
+    };
 
-  if (!chat_id) {
-    createNewChat();
-  } else {
-    setChatId(chat_id);
-  }
-}, [chat_id]);
+    if (!chat_id) {
+      createNewChat();
+    } else {
+      setChatId(chat_id);
+    }
+  }, [chat_id]);
 
   useEffect(() => {
-  const fetchMessages = async () => {
-    try {
-      if (!chatId) return;
-      const res = await axiosInstance.get(`user/chat/${chatId}/history`);
-      setMessages(res.data);
-    } catch (err) {
-      console.error("Lỗi khi tải lịch sử:", err);
-    }
-  };
+    const fetchMessages = async () => {
+      try {
+        if (!chatId) return;
+        const res = await axiosInstance.get(`user/chat/${chatId}/history`);
+        setMessages(res.data);
+      } catch (err) {
+        console.error("Error loading history:", err);
+      }
+    };
 
-  fetchMessages();
-}, [chatId]);
+    fetchMessages();
+  }, [chatId]);
   const AI_MODELS = [
     { id: "qwen3", name: "Qwen3" },
     { id: "gpt4", name: "GPT-4" },
@@ -75,26 +77,35 @@ const Chat = () => {
       source: "user",
       content: message
     };
-    setMessages(prev => [...prev, userMessage]);
+
+    const loadingMessage = {
+      id: "loading",
+      source: "ai",
+      content: "Responding..."
+    };
+
+    setMessages(prev => [...prev, userMessage, loadingMessage]);
     setMessage("");
+    setIsLoading(true);
 
     try {
       const res = await axiosInstance.post("user/chat/ask", {
         chat_id: chatId,
         question: message,
       });
-      // console.log(userMessage.type);
       const { answer, chat_id } = res.data;
       setChatId(chat_id);
-      const aiResponse = {
-        id: messages.length + 2,
-        source: "ai",
-        content: answer
-      };
-      setMessages(prev => [...prev, aiResponse]);
+      setMessages(prev => prev.map(msg =>
+        msg.id === "loading"
+          ? { id: messages.length + 2, source: "ai", content: answer }
+          : msg
+      ));
     } catch (err) {
       toast.error("Error communicating with server");
       console.error(err);
+
+      // Xoá "loading" nếu lỗi
+      setMessages(prev => prev.filter(msg => msg.id !== "loading"));
     }
   };
 
@@ -107,7 +118,6 @@ const Chat = () => {
 
   return (
     <div className="isolate bg-black top-16 w-full h-full">
-      <ToastContainer />
       <div className="flex-1 h-[calc(100vh-4rem)] flex flex-col justify-center mx-auto max-w-4xl min-w-100">
         <div className="card-3d flex flex-col h-full">
           <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar pb-24 justify-center" id="messagesArea">
@@ -120,7 +130,7 @@ const Chat = () => {
                         <div className="max-w-xs">
                           <div className="chat-gradient bg-gray-700 rounded-2xl rounded-tr-sm p-3 shadow-lg">
                             <p className="text-white px-2 break-words">{msg.content}</p>
-                      
+
                           </div>
                           <p className="flex space-x-2 text-xs mt-3 ml-2 justify-end">
                             <button className='hover:text-gray-400 text-white' onClick={() => handleCopyMessage(msg.content)}>
@@ -130,10 +140,15 @@ const Chat = () => {
                         </div>
                       </div>
                     ) : (
+
                       <div className="flex items-start space-x-2 message-bubble">
                         <div className="sm:max-w-60 lg:max-w-150 md:max-w-100">
                           <div className="rounded-2xl rounded-tl-sm p-0 shadow-lg">
-                            <p className="text-white">{msg.content}</p>
+                            {msg.id === "loading" ? (
+                              <span className="italic animate-pulse">Generating answer...</span>
+                            ) : (
+                              <p className="text-white">{msg.content}</p>
+                            )}
                           </div>
                           <p className="flex items-center gap-3 mt-4">
                             <button className='hover:text-gray-400 text-white' onClick={() => handleCopyMessage(msg.content)}>

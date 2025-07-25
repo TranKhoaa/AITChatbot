@@ -17,8 +17,8 @@ const NewChatModal = ({ onClose, setChats }) => {
         onClose();
       }
     } catch (err) {
-      console.error("Lỗi khi tạo chat:", err);
-      alert("Không thể tạo chat mới.");
+      console.error("Error creating chat:", err);
+      alert("Cannot create new chat.");
     }
   };
 

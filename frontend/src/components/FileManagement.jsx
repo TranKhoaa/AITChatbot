@@ -24,7 +24,7 @@ function FileManagement() {
     }
   };
   const handleDownloadFile = async (fileId, fileName) => {
-    try { 
+    try {
       const res = await axiosInstance.get(`admin/file/${fileId}`, {
         responseType: "blob",
       });
@@ -36,12 +36,13 @@ function FileManagement() {
       link.click();
       link.remove();
     } catch (error) {
-      console.error("Lỗi khi tải file:", error);
+      console.error("Error while downloading file:", error);
     }
   };
 
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -50,7 +51,7 @@ function FileManagement() {
         const data = res?.data;
         setFiles(data);
       } catch (error) {
-        console.error("Lỗi khi load file từ DB:", error);
+        console.error("Error loading file from DB:", error);
         setFiles([]);
       } finally {
         setLoading(false);
@@ -59,6 +60,38 @@ function FileManagement() {
 
     fetchFiles();
   }, []);
+
+  const fetchFiles = async () => {
+    try {
+      const res = await axiosInstance.get("admin/file/");
+      const data = res?.data;
+      setFiles(data);
+    } catch (error) {
+      console.error("Error loading file from DB:", error);
+      setFiles([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteFile = async (fileId) => {
+    const confirm = window.confirm("Are you sure you want to delete this file?");
+    if (!confirm) return;
+
+    try {
+      const res = await axiosInstance.delete(`admin/file/${fileId}`);
+
+      if (res.status === 200) {
+        toast.success("File deleted successfully!");
+        fetchFiles();
+      } else {
+        toast.error("Cannot delete file!");
+      }
+    } catch (error) {
+      console.error("Error when deleting file:", error);
+      toast.error("Error when deleting file");
+    }
+  };
 
   const [currentPage, setCurrentPage] = useState(1);
   const filesPerPage = 15;
@@ -76,7 +109,7 @@ function FileManagement() {
   return (
     <div className="flex flex-row bg-black text-white h-full w-screen">
       {/* Sidebar Filter */}
-      <div className="lg:w-80 w-50 border-r border-slate-300 p-4 space-y-6">
+      <div className="lg:w-80 w-50 border-r border-slate-500 p-4 space-y-6">
         <div className="flex items-center gap-x-4">
           <img src={filterIcon} alt="Filter Icon" />
           <h2>Filter</h2>
@@ -141,9 +174,10 @@ function FileManagement() {
                   <td className="pr-2">{file.admin.name}</td>
                   <td className="text-center space-x-2">
                     <button className="hover:text-gray-400 text-white"
-                    onClick={() => handleDownloadFile(file.id, file.name)}>
+                      onClick={() => handleDownloadFile(file.id, file.name)}>
                       <AiOutlineDownload className="h-5 w-5" /></button>
-                    <button className="hover:text-gray-400 text-white">
+                    <button className="hover:text-gray-400 text-white"
+                      onClick={() => handleDeleteFile(file.id)}>
                       <AiOutlineDelete className="h-5 w-5" /></button>
                   </td>
                 </tr>
