@@ -1,34 +1,67 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import SignUpPage from './pages/SignUpPage';
-import AdminPage from './pages/adminPage';
-import Chat from './pages/Chat';
-import ChatSidebar from './components/ChatSidebar';
-import ChatHeader from './components/ChatHeader';
-import Settings from './components/Settings';
-import { useState } from 'react';
-import { ToastContainer } from 'react-toastify';
-import { Provider } from 'react-redux';
-import store from './app/store';
-import UnauthorizedPage from './pages/UnauthorizedPage';
-import AdminRoute from './routes/AdminRoute';
-import PrivateRoute from './routes/PrivateRoute';
-import NewChatModal from './components/NewChatModal';
-
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
+import SignUpPage from "./pages/SignUpPage";
+import AdminPage from "./pages/adminPage";
+import Chat from "./pages/Chat";
+import ChatSidebar from "./components/ChatSidebar";
+import ChatHeader from "./components/ChatHeader";
+import Settings from "./components/Settings";
+import { useState } from "react";
+import { ToastContainer } from "react-toastify";
+import { Provider } from "react-redux";
+import store from "./app/store";
+import UnauthorizedPage from "./pages/UnauthorizedPage";
+import AdminRoute from "./routes/AdminRoute";
+import PrivateRoute from "./routes/PrivateRoute";
+import NewChatModal from "./components/NewChatModal";
+import { useSelector } from "react-redux";
+import { Navigate } from "react-router-dom";
 
 const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+
+  // Role-based redirect logic for '/'
+  const { user, token } = useSelector((state) => state.auth);
+  const AuthRedirect = ({ children }) => {
+    if (token) {
+      if (user?.role === "admin") return <Navigate to="/admin" replace />;
+      return <Navigate to="/chat" replace />;
+    }
+    return children;
+  };
+
   return (
     <Provider store={store}>
       <Router>
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignUpPage />} />
+          <Route
+            path="/"
+            element={
+              <AuthRedirect>
+                <HomePage />
+              </AuthRedirect>
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <AuthRedirect>
+                <LoginPage />
+              </AuthRedirect>
+            }
+          />
+          <Route
+            path="/signup"
+            element={
+              <AuthRedirect>
+                <SignUpPage />
+              </AuthRedirect>
+            }
+          />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
           {/* Chỉ user đăng nhập mới vào được */}
@@ -39,9 +72,7 @@ const App = () => {
                 <div>
                   <ChatHeader toggleSidebar={toggleSidebar} />
                   <main className="flex top-16 h-fit bg-black">
-                    <ChatSidebar
-                      isSidebarOpen={isSidebarOpen}
-                    />
+                    <ChatSidebar isSidebarOpen={isSidebarOpen} />
                     <Chat />
                   </main>
                 </div>
@@ -55,9 +86,7 @@ const App = () => {
                 <div>
                   <ChatHeader toggleSidebar={toggleSidebar} />
                   <main className="flex top-16 h-fit bg-black">
-                    <ChatSidebar
-                      isSidebarOpen={isSidebarOpen}
-                    />
+                    <ChatSidebar isSidebarOpen={isSidebarOpen} />
                     <Chat />
                   </main>
                 </div>
@@ -74,6 +103,7 @@ const App = () => {
               </AdminRoute>
             }
           />
+
           <Route path="/test" element={<NewChatModal />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>

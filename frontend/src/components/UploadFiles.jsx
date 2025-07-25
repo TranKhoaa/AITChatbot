@@ -9,14 +9,13 @@ import {
   FaChevronRight,
   FaChevronDown,
 } from "react-icons/fa";
-import { MdClose } from 'react-icons/md';
+import { MdClose } from "react-icons/md";
 
 export default function UploadFile({ onClose }) {
   const [files, setFiles] = useState([]);
   const [expanded, setExpanded] = useState({});
   const fileInputRef = useRef();
   const folderInputRef = useRef();
-
 
   const handleFiles = (selectedFiles) => {
     const allowedTypes = [
@@ -147,9 +146,13 @@ export default function UploadFile({ onClose }) {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      })
+      });
       console.log(res);
-      if (res.request.status === 200 || res.request.status === 201 || res.request.status === 202) {
+      if (
+        res.request.status === 200 ||
+        res.request.status === 201 ||
+        res.request.status === 202
+      ) {
         // const data = await res.json();
         alert("Upload successful");
         onClose();
@@ -162,7 +165,6 @@ export default function UploadFile({ onClose }) {
     }
   };
 
-
   const handleCancel = () => {
     setFiles([]);
   };
@@ -173,7 +175,9 @@ export default function UploadFile({ onClose }) {
     <main className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md container w-[800px] h-200">
       <article className="flex flex-col h-200 bg-gray-900 text-white p-4">
         <div class="flex justify-between">
-          <h1 className="font-semibold text-lg mb-2 p-2 ml-4">Files/Folders Upload</h1>
+          <h1 className="font-semibold text-lg mb-2 p-2 ml-4">
+            Files/Folders Upload
+          </h1>
           <button
             onClick={onClose}
             className="top-1 p-4 right-1 absolute text-gray-500 hover:text-gray-600"
@@ -228,7 +232,6 @@ export default function UploadFile({ onClose }) {
             </button>
           </div>
         </div>
-
 
         <footer className="flex justify-end mt-4 mb-4 h-15 gap-x-3">
           <button
