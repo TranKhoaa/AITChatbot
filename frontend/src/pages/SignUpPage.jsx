@@ -26,6 +26,7 @@ function SignUpPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { error } = useSelector((state) => state.auth);
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
   const togglePass = (e) => {
     e.preventDefault();
@@ -74,15 +75,21 @@ function SignUpPage() {
       const response = isAdmin
         ? await signupAdmin(credentials)
         : await signupUser(credentials);
-      dispatch(
-        setCredentials({
-          id: response.user_id || response.admin_id,
-          name: response.name,
-          access_token: response.access_token,
-          refresh_token: response.refresh_token,
-        })
-      );
-      navigate("/chat");
+      // dispatch(
+      //   setCredentials({
+      //     id: response.user_id || response.admin_id,
+      //     name: response.name,
+      //     access_token: response.access_token,
+      //     refresh_token: response.refresh_token,
+      //   })
+      // ); //Sign up information should not be include in local storage
+      if (response && (response.user_id || response.admin_id)) {
+        setSignupSuccess(true);
+        setTimeout(() => {
+          navigate("/login");
+        }, 3000);
+        return;
+      }
     } catch (err) {
       dispatch(setError(err));
     }
@@ -245,6 +252,11 @@ function SignUpPage() {
               </a>
             </span>
           </div>
+          {signupSuccess && (
+            <div className="text-green-600 text-center mt-2 text-sm xl:text-base">
+              Sign up successful! Directing to login
+            </div>
+          )}
         </form>
       </div>
     </AuthLayout>
