@@ -1,3 +1,4 @@
+from hashlib import sha256
 from fastapi import (
     APIRouter,
     Depends,
@@ -81,11 +82,11 @@ async def upload_files(
         relative_path = file.filename  # Maintain original folder structure
         safe_filepath = os.path.normpath(relative_path).replace("..", "").lstrip("/")
         full_path = os.path.join(UPLOAD_DIR, safe_filepath)
-        os.makedirs(os.path.dirname(full_path), exist_ok=True)  # Ensure directory exists
         # only get the filename, not the full path
         safe_filename = os.path.basename(safe_filepath)
 
         content = await file.read()
+        hash = sha256(content).hexdigest()
         media_type = (
             mimetypes.guess_type(file.filename)[0] or "application/octet-stream"
         )
@@ -97,6 +98,7 @@ async def upload_files(
             "extension": extension,
             "content": content,
             "media_type": media_type,
+            "hash": hash,
         }
 
     get_file_info_tasks = [get_file_info(file) for file in files]
