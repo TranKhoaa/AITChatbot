@@ -40,7 +40,9 @@ class Chunk(SQLModel, table=True):
     )  # 1536 is common for OpenAI embeddings
     file_id: uuid.UUID = Field(foreign_key="File.id", nullable=False)
     created_at: datetime = Field(sa_column=Column(pg.TIMESTAMP, default=datetime.now))
-    updated_at: datetime = Field(sa_column=Column(pg.TIMESTAMP, default=datetime.now))
+    updated_at: datetime = Field(
+        sa_column=Column(pg.TIMESTAMP, default=datetime.now, onupdate=datetime.now)
+    )
     file: "File" = Relationship(
         back_populates="chunks",
         sa_relationship_kwargs={

@@ -20,7 +20,9 @@ class Chat_history(SQLModel, table=True):
     created_at: datetime = Field(
         sa_column=Column(pg.TIMESTAMP, default=datetime.now, index=True)
     )
-    updated_at: datetime = Field(sa_column=Column(pg.TIMESTAMP, default=datetime.now))
+    updated_at: datetime = Field(
+        sa_column=Column(pg.TIMESTAMP, default=datetime.now, onupdate=datetime.now)
+    )
     chat: "Chat" = Relationship(
         back_populates="chat_history",
         sa_relationship_kwargs={
