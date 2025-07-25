@@ -173,7 +173,7 @@ export default function UploadFile({ onClose }) {
     <main className="fixed z-[1000] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md container w-[800px] h-200">
       <article className="flex flex-col h-200 bg-gray-900 text-white p-4">
         <div class="flex justify-between">
-          <h1 className="font-semibold text-lg mb-2 p-2 ml-4">Files/Folders Upload</h1>
+          <h1 className="font-semibold text-lg mb-2 px-3 p-2 ml-4">Files/Folders Upload</h1>
           <button
             onClick={onClose}
             className="top-1 p-4 right-1 absolute text-gray-500 hover:text-gray-600"
@@ -232,16 +232,16 @@ export default function UploadFile({ onClose }) {
 
         <footer className="flex justify-end mt-8 h-12 gap-x-3">
           <button
-            onClick={handleUpload}
-            className="rounded p-6 py-1 bg-gray-800 hover:bg-gray-600 text-white"
-          >
-            Upload Now
-          </button>
-          <button
             onClick={handleCancel}
             className="rounded p-6 py-1 bg-gray-800 hover:bg-gray-600"
           >
             Cancel
+          </button>
+          <button
+            onClick={handleUpload}
+            className="rounded p-6 py-1 bg-gray-800 hover:bg-gray-600 text-white"
+          >
+            Upload Now
           </button>
         </footer>
       </article>
