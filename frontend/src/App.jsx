@@ -106,6 +106,8 @@ const App = () => {
 
           <Route path="/test" element={<NewChatModal />} />
           <Route path="/settings" element={<Settings />} />
+          {/* Catch-all route for non-existent paths */}
+          <Route path="*" element={<Navigate to="/" replace />} />  
         </Routes>
 
         <ToastContainer
