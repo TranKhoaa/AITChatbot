@@ -129,17 +129,17 @@ function FileManagement() {
     // Created date filter
     if (createdFrom) {
       const createdDate = new Date(file.created_at);
-      const from = new Date(createdFrom);
-      const to = createdTo ? new Date(createdTo) : new Date();
-      if (createdDate < from || createdDate > to) return false;
+      const fromDate = new Date(createdFrom + "T00:00:00");
+      const toDate = createdTo ? new Date(createdTo + "T23:59:59") : (new Date() + "T23:59:59");
+      if (createdDate < fromDate || createdDate >= toDate) return false;
     }
 
     // Modified date filter
     if (modifiedFrom) {
       const modifiedDate = new Date(file.updated_at);
-      const from = new Date(modifiedFrom);
-      const to = modifiedTo ? new Date(modifiedTo) : new Date();
-      if (modifiedDate < from || modifiedDate > to) return false;
+      const fromDate = new Date(modifiedFrom + "T00:00:00");
+      const to = modifiedTo ? new Date(modifiedTo + "T23:59:59") : (new Date() + "T23:59:59");
+      if (modifiedDate < from || modifiedDate >= to) return false;
     }
 
     return true;
