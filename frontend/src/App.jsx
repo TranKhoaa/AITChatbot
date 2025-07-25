@@ -29,7 +29,8 @@ const App = () => {
   const AuthRedirect = ({ children }) => {
     if (token) {
       if (user?.role === "admin") return <Navigate to="/admin" replace />;
-      return <Navigate to="/chat" replace />;
+      else if (user?.role === "user") return <Navigate to="/chat" replace />;
+      else return <Navigate to="/login" replace />;
     }
     return children;
   };
@@ -107,7 +108,7 @@ const App = () => {
           <Route path="/test" element={<NewChatModal />} />
           <Route path="/settings" element={<Settings />} />
           {/* Catch-all route for non-existent paths */}
-          <Route path="*" element={<Navigate to="/" replace />} />  
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
 
         <ToastContainer
