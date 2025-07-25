@@ -1,3 +1,4 @@
+import json
 from docx import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
