@@ -154,7 +154,7 @@ export default function UploadFile({ onClose }) {
         res.request.status === 202
       ) {
         // const data = await res.json();
-        alert("Upload successful");
+        alert("Processing...");
         onClose();
       } else {
         alert("Error uploading!");
@@ -172,7 +172,7 @@ export default function UploadFile({ onClose }) {
   const tree = buildTree(files);
 
   return visible ? (
-    <main className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md container w-[800px] h-200">
+    <main className="fixed z-[1000] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md container w-[800px] h-200">
       <article className="flex flex-col h-200 bg-gray-900 text-white p-4">
         <div class="flex justify-between">
           <h1 className="font-semibold text-lg mb-2 p-2 ml-4">
@@ -233,7 +233,9 @@ export default function UploadFile({ onClose }) {
           </div>
         </div>
 
-        <footer className="flex justify-end mt-4 mb-4 h-15 gap-x-3">
+
+
+        <footer className="flex justify-end mt-8 h-12 gap-x-3">
           <button
             onClick={handleUpload}
             className="rounded p-6 py-1 bg-gray-800 hover:bg-gray-600 text-white"

@@ -6,6 +6,9 @@ import pdfIcon from "../assets/pdf_icon.svg";
 import ReactPaginate from "react-paginate";
 import axiosInstance from "../api/axiosInstance";
 import { AiOutlineDownload, AiOutlineDelete } from "react-icons/ai";
+import 'react-toastify/dist/ReactToastify.css';
+import { toast, ToastContainer } from 'react-toastify';
+
 
 function FileManagement() {
   const getIconByType = (type) => {
@@ -43,24 +46,6 @@ function FileManagement() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-
-  useEffect(() => {
-    const fetchFiles = async () => {
-      try {
-        const res = await axiosInstance.get("admin/file/");
-        const data = res?.data;
-        setFiles(data);
-      } catch (error) {
-        console.error("Error loading file from DB:", error);
-        setFiles([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFiles();
-  }, []);
-
   const fetchFiles = async () => {
     try {
       const res = await axiosInstance.get("admin/file/");
@@ -74,14 +59,18 @@ function FileManagement() {
     }
   };
 
+  useEffect(() => {
+    fetchFiles();
+  }, []);
+
+
   const handleDeleteFile = async (fileId) => {
     const confirm = window.confirm("Are you sure you want to delete this file?");
     if (!confirm) return;
 
     try {
       const res = await axiosInstance.delete(`admin/file/${fileId}`);
-
-      if (res.status === 200) {
+      if (res.request.status === 200 || res.request.status === 204) {
         toast.success("File deleted successfully!");
         fetchFiles();
       } else {
