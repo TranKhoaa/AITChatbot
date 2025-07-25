@@ -127,7 +127,6 @@ def process_files(
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         await engine.dispose()  # Đóng engine sau khi hoàn tất
-        print(results)
         return results
 
     return asyncio.run(_process())
