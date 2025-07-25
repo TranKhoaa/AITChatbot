@@ -6,9 +6,8 @@ import pdfIcon from "../assets/pdf_icon.svg";
 import ReactPaginate from "react-paginate";
 import axiosInstance from "../api/axiosInstance";
 import { AiOutlineDownload, AiOutlineDelete } from "react-icons/ai";
-import 'react-toastify/dist/ReactToastify.css';
-import { toast, ToastContainer } from 'react-toastify';
-
+import "react-toastify/dist/ReactToastify.css";
+import { toast, ToastContainer } from "react-toastify";
 
 function FileManagement() {
   const getIconByType = (type) => {
@@ -63,9 +62,10 @@ function FileManagement() {
     fetchFiles();
   }, []);
 
-
   const handleDeleteFile = async (fileId) => {
-    const confirm = window.confirm("Are you sure you want to delete this file?");
+    const confirm = window.confirm(
+      "Are you sure you want to delete this file?"
+    );
     if (!confirm) return;
 
     try {
@@ -82,12 +82,82 @@ function FileManagement() {
     }
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-GB");
+  };
+
+  const [nameFilter, setNameFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState([]); 
+  const [uploaderFilter, setUploaderFilter] = useState("");
+  const [createdFrom, setCreatedFrom] = useState("");
+  const [createdTo, setCreatedTo] = useState("");
+  const [modifiedFrom, setModifiedFrom] = useState("");
+  const [modifiedTo, setModifiedTo] = useState("");
+
+  const handleTypeChange = (type) => {
+    setTypeFilter((prev) =>
+      prev.includes(type)
+        ? prev.filter((t) => t !== type)
+        : [...prev, type]
+    );
+  };
+  
+
+  const filteredFiles = files.filter((file) => {
+    //File name
+    if (
+      nameFilter.length > 3 &&
+      !file.name.toLowerCase().includes(nameFilter.toLowerCase())
+    ) {
+      return false;
+    }
+    // Admin name
+    if (
+      uploaderFilter.length > 3 &&
+      !file.admin.name.toLowerCase().includes(uploaderFilter.toLowerCase())
+    ) {
+      return false;
+    }
+    // Checkbox
+    if (typeFilter.length > 0) {
+      const fileExtension = file.type?.toLowerCase().replace(".", "");
+      if (!typeFilter.includes(fileExtension)) return false;
+    }
+
+    // Created date filter
+    if (createdFrom) {
+      const createdDate = new Date(file.created_at);
+      const from = new Date(createdFrom);
+      const to = createdTo ? new Date(createdTo) : new Date();
+      if (createdDate < from || createdDate > to) return false;
+    }
+
+    // Modified date filter
+    if (modifiedFrom) {
+      const modifiedDate = new Date(file.updated_at);
+      const from = new Date(modifiedFrom);
+      const to = modifiedTo ? new Date(modifiedTo) : new Date();
+      if (modifiedDate < from || modifiedDate > to) return false;
+    }
+
+    return true;
+  });
+
   const [currentPage, setCurrentPage] = useState(1);
   const filesPerPage = 15;
   const indexOfLastFile = currentPage * filesPerPage;
   const indexOfFirstFile = indexOfLastFile - filesPerPage;
-  const currentFiles = files.slice(indexOfFirstFile, indexOfLastFile);
-  const totalPages = Math.max(1, Math.ceil(files.length / filesPerPage));
+
+  // const currentFiles = files.slice(indexOfFirstFile, indexOfLastFile);
+  // const totalPages = Math.max(1, Math.ceil(files.length / filesPerPage));
+
+  const currentFiles = filteredFiles.slice(indexOfFirstFile, indexOfLastFile);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredFiles.length / filesPerPage)
+  );
 
   const paginate = (pageNumber) => {
     if (pageNumber >= 1 && pageNumber <= totalPages) {
@@ -105,14 +175,21 @@ function FileManagement() {
         </div>
         <div>
           <label className="block mb-1">Name</label>
-          <input type="text" placeholder="Name" className="w-full rounded bg-white text-black p-2" />
+          <input
+            type="text"
+            placeholder="Name"
+            className="w-full rounded bg-white text-black p-2"
+            onChange={(e) => setNameFilter(e.target.value)}
+          />
         </div>
         <div>
           <label className="block mb-1">Type</label>
           <div className="flex flex-wrap gap-4">
             {["docx", "xls", "pdf"].map((type) => (
               <div className="flex items-center gap-x-2" key={type}>
-                <input type="checkbox" className="accent-green-500 h-4 w-4" />
+                <input type="checkbox" className="accent-green-500 h-4 w-4" 
+                onChange={(e) => handleTypeChange(type)}
+                />
                 <label>{type}</label>
               </div>
             ))}
@@ -120,19 +197,40 @@ function FileManagement() {
         </div>
         <div>
           <label className="block mb-1">Date Created</label>
-          <input type="date" className="w-full rounded bg-white text-black p-2" />
+          <input
+            type="date"
+            className="w-full rounded bg-white text-black p-2"
+            onChange={(e) => setCreatedFrom(e.target.value)}
+          />
           <label className="mt-1 block">To</label>
-          <input type="date" className="w-full rounded bg-white text-black p-2" />
+          <input
+            type="date"
+            className="w-full rounded bg-white text-black p-2"
+            onChange={(e) => setCreatedTo(e.target.value)}
+          />
         </div>
         <div>
           <label className="block mb-1">Date Modified</label>
-          <input type="date" className="w-full rounded bg-white text-black p-2" />
+          <input
+            type="date"
+            className="w-full rounded bg-white text-black p-2"
+            onChange={(e)=>setModifiedFrom(e.target.value)}
+          />
           <label className="mt-1 block">To</label>
-          <input type="date" className="w-full rounded bg-white text-black p-2" />
+          <input
+            type="date"
+            className="w-full rounded bg-white text-black p-2"
+            onChange={(e)=>setModifiedTo(e.target.value)}
+          />
         </div>
         <div>
           <label className="block mb-1">Uploaded by</label>
-          <input type="text" placeholder="Uploader" className="w-full rounded bg-white text-black p-2" />
+          <input
+            type="text"
+            placeholder="Uploader"
+            className="w-full rounded bg-white text-black p-2"
+            onChange={(e) => setUploaderFilter(e.target.value)}
+          />
         </div>
       </div>
 
@@ -152,22 +250,35 @@ function FileManagement() {
           <tbody>
             {!loading && currentFiles.length > 0 ? (
               currentFiles.map((file, i) => (
-                <tr key={i} className="border-b border-slate-700 hover:bg-slate-800 text-sm md:text-base">
+                <tr
+                  key={i}
+                  className="border-b border-slate-700 hover:bg-slate-800 text-sm md:text-base"
+                >
                   <td className="py-2 flex items-center gap-2">
-                    <img src={getIconByType(file.type)} alt="icon" className="w-5 h-5" />
+                    <img
+                      src={getIconByType(file.type)}
+                      alt="icon"
+                      className="w-5 h-5"
+                    />
                     {file.name}
                   </td>
                   <td className="pr-2">{file.type}</td>
-                  <td className="pr-2">{file.created_at}</td>
-                  <td className="pr-2">{file.updated_at}</td>
+                  <td className="pr-2">{formatDate(file.created_at)}</td>
+                  <td className="pr-2">{formatDate(file.updated_at)}</td>
                   <td className="pr-2">{file.admin.name}</td>
                   <td className="text-center space-x-2">
-                    <button className="hover:text-gray-400 text-white"
-                      onClick={() => handleDownloadFile(file.id, file.name)}>
-                      <AiOutlineDownload className="h-5 w-5" /></button>
-                    <button className="hover:text-gray-400 text-white"
-                      onClick={() => handleDeleteFile(file.id)}>
-                      <AiOutlineDelete className="h-5 w-5" /></button>
+                    <button
+                      className="hover:text-gray-400 text-white"
+                      onClick={() => handleDownloadFile(file.id, file.name)}
+                    >
+                      <AiOutlineDownload className="h-5 w-5" />
+                    </button>
+                    <button
+                      className="hover:text-gray-400 text-white"
+                      onClick={() => handleDeleteFile(file.id)}
+                    >
+                      <AiOutlineDelete className="h-5 w-5" />
+                    </button>
                   </td>
                 </tr>
               ))
@@ -188,7 +299,9 @@ function FileManagement() {
               <ReactPaginate
                 breakLabel="..."
                 nextLabel=">"
-                onPageChange={(selectedItem) => setCurrentPage(selectedItem.selected + 1)}
+                onPageChange={(selectedItem) =>
+                  setCurrentPage(selectedItem.selected + 1)
+                }
                 pageRangeDisplayed={1}
                 marginPagesDisplayed={1}
                 pageCount={totalPages}
