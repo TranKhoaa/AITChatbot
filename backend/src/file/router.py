@@ -20,23 +20,8 @@ from sqlmodel import select
 from src.shared.schema import FileSchemaWithAdmin
 from typing import List
 import uuid
-from src.file.utils import (
-    read_docx_file,
-    # read_pdf_file,
-    chunk_text, 
-    vector_embedding_chunks,
-    # read_excel_file,
-    )
 from src.file.service import process_files, FileInfoList
 from src.config import Config
-
-# from src.file.utils import (
-#     read_docx_file,
-#     read_pdf_file,
-#     chunk_text,
-#     vector_embedding_chunks,
-#     read_excel_file,
-# )
 
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB limit
@@ -96,6 +81,7 @@ async def upload_files(
         relative_path = file.filename  # Maintain original folder structure
         safe_filepath = os.path.normpath(relative_path).replace("..", "").lstrip("/")
         full_path = os.path.join(UPLOAD_DIR, safe_filepath)
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)  # Ensure directory exists
         # only get the filename, not the full path
         safe_filename = os.path.basename(safe_filepath)
 
