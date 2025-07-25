@@ -1,3 +1,4 @@
+from hashlib import sha256
 from fastapi import (
     APIRouter,
     Depends,
@@ -20,23 +21,8 @@ from sqlmodel import select
 from src.shared.schema import FileSchemaWithAdmin
 from typing import List
 import uuid
-from src.file.utils import (
-    read_docx_file,
-    # read_pdf_file,
-    chunk_text, 
-    vector_embedding_chunks,
-    # read_excel_file,
-    )
 from src.file.service import process_files, FileInfoList
 from src.config import Config
-
-# from src.file.utils import (
-#     read_docx_file,
-#     read_pdf_file,
-#     chunk_text,
-#     vector_embedding_chunks,
-#     read_excel_file,
-# )
 
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB limit
@@ -100,6 +86,7 @@ async def upload_files(
         safe_filename = os.path.basename(safe_filepath)
 
         content = await file.read()
+        hash = sha256(content).hexdigest()
         media_type = (
             mimetypes.guess_type(file.filename)[0] or "application/octet-stream"
         )
@@ -111,6 +98,7 @@ async def upload_files(
             "extension": extension,
             "content": content,
             "media_type": media_type,
+            "hash": hash,
         }
 
     get_file_info_tasks = [get_file_info(file) for file in files]

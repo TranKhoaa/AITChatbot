@@ -1,6 +1,6 @@
 from typing import List, TypedDict
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel import create_engine
+from sqlmodel import create_engine, select
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlalchemy.orm import sessionmaker
 from src.file.model import File
@@ -26,6 +26,7 @@ class FileInfo(TypedDict):
     extension: str
     content: bytes
     media_type: str
+    hash: str
 
 
 # Kiểu dữ liệu cho array của FileInfo
@@ -55,11 +56,31 @@ def process_files(
                     full_path = file["full_path"]
                     extension = file["extension"]
                     media_type = file["media_type"]
+                    hash = file["hash"]
                     content = file["content"]
 
-                    # save file
-                    async with aiofiles.open(full_path, "wb") as f:
-                        await f.write(content)
+                    # chech if file already exists
+                    select_stmt = select(File).where(File.hash == hash)
+                    existing_file = await session.exec(select_stmt)
+                    existing_file = existing_file.first()
+                    if existing_file:
+                        if existing_file.deleted:
+                            # Restore deleted file
+                            existing_file.deleted = False
+                            existing_file.uploaded_by = uploaded_by
+                            await session.commit()
+                            return {
+                                "filename": filename,
+                                "status": "restored",
+                                "file_id": existing_file.id,
+                            }
+                        else:
+                            # File already exists and is not deleted
+                            return {
+                                "filename": filename,
+                                "status": "exists",
+                                "file_id": existing_file.id,
+                            }
 
                     # save metadata
                     file_metadata = File(
@@ -67,6 +88,7 @@ def process_files(
                         link=full_path,
                         type=extension,
                         media_type=media_type,
+                        hash=hash,
                         uploaded_by=uploaded_by,
                         chunks=[],
                     )
@@ -74,6 +96,11 @@ def process_files(
                     await session.flush()
                     await session.refresh(file_metadata)
                     file_id = file_metadata.id
+
+                    # save file
+                    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                    async with aiofiles.open(full_path, "wb") as f:
+                        await f.write(content)
 
                     # Automatically embed if .docx
                     if extension == ".docx":
@@ -127,7 +154,6 @@ def process_files(
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         await engine.dispose()  # Đóng engine sau khi hoàn tất
-        print(results)
         return results
 
     return asyncio.run(_process())

@@ -17,7 +17,9 @@ class User(SQLModel, table=True):
     name: str
     password_hash: str = Field(exclude=True)  # Exclude from serialization
     created_at: datetime = Field(sa_column=Column(pg.TIMESTAMP, default=datetime.now))
-    updated_at: datetime = Field(sa_column=Column(pg.TIMESTAMP, default=datetime.now))
+    updated_at: datetime = Field(
+        sa_column=Column(pg.TIMESTAMP, default=datetime.now, onupdate=datetime.now)
+    )
     chats: List["Chat"] = Relationship(
         back_populates="user",
         sa_relationship_kwargs={
