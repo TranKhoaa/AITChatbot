@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Body, Depends, HTTPException, status, Response
 from fastapi.responses import JSONResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
 from .service import AuthService
@@ -8,9 +8,11 @@ from .schema import (
     AdminCreateSchema,
     UserLoginSchema,
     AdminLoginSchema,
+    # DecodeTokenSchema,
 )
 from src.auth.utils import create_token, verify_password
 from .dependency import RefreshTokenBearerUser, RefreshTokenBearerAdmin
+from src.auth.utils import decode_token
 
 auth_router = APIRouter()
 auth_service = AuthService()
@@ -240,3 +242,22 @@ async def logout():
     )
     response.delete_cookie(key="refresh_token")
     return response
+
+# @auth_router.post("/decode")
+# async def decode(token: DecodeTokenSchema):
+#     """
+#     Endpoint to decode JWT token
+#     """
+#     token_data = decode_token(token.token)
+#     if not token_data:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+#         )
+
+#     return JSONResponse(
+#         status_code=status.HTTP_200_OK,
+#         content={
+#             "message": "Token decoded successfully",
+#             "data": token_data,
+#         },
+#     )
