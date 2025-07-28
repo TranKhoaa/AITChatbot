@@ -10,53 +10,53 @@ import { logout } from "../features/auth/authSlice";
 import axiosInstance from "../api/axiosInstance";
 import React, { useState, useEffect } from "react";
 import NewChatModal from './NewChatModal';
+import NewChatNameModal from './NewChaTNameModal';
 import SettingsModal from './Settings';
-
+import "react-toastify/dist/ReactToastify.css";
+import { toast, ToastContainer } from "react-toastify";
 
 const ChatSidebar = ({ isSidebarOpen }) => {
     const [chats, setChats] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [activeMenuChatId, setActiveMenuChatId] = useState(null);
+    const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+    const [chatToRename, setChatToRename] = useState(null); // lưu thông tin chat đang rename
 
-    const handleRenameChat = async (chat_id, newName) => {
+    const fetchChats = async () => {
         try {
-            await axiosInstance.put(`/user/chat/${chat_id}`, { name: newName });
-            setChats((prev) =>
-                prev.map((chat) => (chat.chat_id === chat_id ? { ...chat, name: newName } : chat))
+            const res = await axiosInstance.get("/user/chat/");
+            const sortedChats = [...res.data].sort(
+                (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
             );
-        } catch (error) {
-            console.error("Rename failed", error);
+            setChats(sortedChats); // Chat mới nhất nằm trên đầu
+        } catch (err) {
+            console.error("Error when getting chat list:", err);
         }
     };
-
-    const handleDeleteChat = async (chat_id) => {
-        const confirm = window.confirm("Are you sure you want to delete this chat?");
-        if (!confirm) return;
-
-        try {
-            await axiosInstance.delete(`/user/chat/${chat_id}`);
-            setChats((prev) => prev.filter((chat) => chat.chat_id !== chat_id));
-        } catch (error) {
-            console.error("Delete failed", error);
-        }
-    };
-
     useEffect(() => {
-        const fetchChats = async () => {
-            try {
-                const res = await axiosInstance.get("/user/chat/");
-                const sortedChats = [...res.data].sort(
-                    (a, b) => new Date(b.updated_at) - new Date(a.updated_at)
-                );
-                setChats(sortedChats); // Chat mới nhất nằm trên đầu
-            } catch (err) {
-                console.error("Error when getting chat list:", err);
-            }
-        };
-
         fetchChats();
     }, []);
+
+      const handleDeleteChat = async (chat_id) => {
+    const confirm = window.confirm("Are you sure you want to delete this chat?");
+    if (!confirm) return;
+
+    try {
+      const res = await axiosInstance.delete(`/user/chat/${chat_id}`);
+      console.log(res);
+      if (res.request.status === 200 || res.request.status === 204) {
+        setChats((prev) => prev.filter((chat) => chat.chat_id !== chat_id));
+        toast.success("Chat deleted successfully!");
+        fetchChats();
+      } else {
+        toast.error("Cannot delete chat!");
+      }
+    } catch (error) {
+      console.error("Delete failed", error);
+    }
+  };
+
 
     const dispatch = useDispatch();
     const handleSignOut = () => {
@@ -75,6 +75,16 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                 )}
                 {isSettingsOpen && (
                     <SettingsModal onClose={() => setIsSettingsOpen(false)} />
+                )}
+                {isRenameModalOpen && chatToRename && (
+                    <NewChatNameModal
+                        chat={chatToRename}
+                        onClose={() => setIsRenameModalOpen(false)}
+                        onRename={(chat_id, newName) => {
+                            handleRenameChat(chat_id, newName);
+                            setIsRenameModalOpen(false);
+                        }}
+                    />
                 )}
                 {/* Sidebar */}
                 <aside className="fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-black text-white sm:translate-x-0">
@@ -141,8 +151,8 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                                                             <button
                                                                 className="block w-full text-left px-4 py-2 hover:bg-gray-900"
                                                                 onClick={() => {
-                                                                    const newName = prompt("Enter new chat name:", chat.name);
-                                                                    if (newName) handleRenameChat(chat.chat_id, newName);
+                                                                    setIsRenameModalOpen(true);
+                                                                    setChatToRename(chat);
                                                                     setActiveMenuChatId(null);
                                                                 }}
                                                             >
@@ -159,6 +169,7 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                                                             </button>
                                                         </div>
                                                     )}
+
                                                 </div>
                                             </div>
                                         ))}

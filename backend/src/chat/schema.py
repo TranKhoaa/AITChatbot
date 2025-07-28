@@ -22,3 +22,6 @@ class ChatHistorySchema(BaseModel):
     created_at: datetime
     class Config:
         orm_mode = True
+class RenameChatSchema(BaseModel):
+    id: uuid.UUID
+    new_name: str

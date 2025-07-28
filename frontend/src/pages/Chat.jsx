@@ -15,7 +15,7 @@ const Chat = () => {
   const { chat_id } = useParams();
   const [chatId, setChatId] = useState(chat_id);
   const [editIndex, setEditIndex] = useState(null);       // index của tin nhắn đang chỉnh sửa
-const [editedMessage, setEditedMessage] = useState(""); // nội dung tin nhắn đã chỉnh sửa
+  const [editedMessage, setEditedMessage] = useState(""); // nội dung tin nhắn đã chỉnh sửa
 
   const navigate = useNavigate();
 
@@ -206,7 +206,7 @@ const [editedMessage, setEditedMessage] = useState(""); // nội dung tin nhắn
               className="bg-transparent border-none text-white placeholder:text-white/40 focus:ring-hidden outline-none w-full custom-scrollbar"
             />
             {/* Model Dropdown */}
-            <div className="relative">
+            <div className="relative flex flex-row space-x-110">
               <div className="items-center gap-2 p-1">
                 <button
                   className="flex items-center gap-1 text-white hover:bg-white/10"
@@ -233,13 +233,13 @@ const [editedMessage, setEditedMessage] = useState(""); // nội dung tin nhắn
                   </div>
                 </div>
               )}
+              <button
+                className="p-3 justify-end text-white hover:bg-gray-600 rounded-full transition-colors"
+                onClick={handleSendMessage}
+              >
+                <BsFillSendFill className="h-5 w-5" />
+              </button>
             </div>
-            <button
-              className="row-span-2 p-2 absolute top-1/2 right-5 place-self-center justify-end text-white transform -translate-y-1/2 hover:bg-gray-600 rounded-full transition-colors"
-              onClick={handleSendMessage}
-            >
-              <BsFillSendFill className="h-5 w-5" />
-            </button>
           </div>
         </div>
       </div>
