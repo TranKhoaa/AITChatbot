@@ -14,6 +14,9 @@ const Chat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { chat_id } = useParams();
   const [chatId, setChatId] = useState(chat_id);
+  const [editIndex, setEditIndex] = useState(null);       // index của tin nhắn đang chỉnh sửa
+const [editedMessage, setEditedMessage] = useState(""); // nội dung tin nhắn đã chỉnh sửa
+
   const navigate = useNavigate();
 
   const createNewChat = async () => {
@@ -169,7 +172,6 @@ const Chat = () => {
                         </div>
                       </div>
                     ) : (
-
                       <div className="flex items-start space-x-2 message-bubble">
                         <div className="sm:max-w-60 lg:max-w-150 md:max-w-100">
                           <div className="rounded-2xl rounded-tl-sm p-0 shadow-lg">
