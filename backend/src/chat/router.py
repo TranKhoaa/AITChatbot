@@ -202,3 +202,36 @@ async def get_chat_history(
         raise HTTPException(
             status_code=500, detail=f"Failed to retrieve chat history: {str(e)}"
         )
+
+
+@chat_router.delete("/{chat_id}", status_code=204)
+async def delete_chat(
+    chat_id: UUID,
+    user_detail: dict = Depends(AccessTokenBearerUser),
+    session: AsyncSession = Depends(get_session),
+):
+    """Delete a chat and its history for the authenticated user."""
+    try:
+        # Verify chat exists and belongs to the user
+        statement = select(Chat).where(
+            Chat.id == chat_id, Chat.user_id == user_detail["data"]["id"]
+        )
+        result = await session.exec(statement)
+        chat = result.first()
+        if not chat:
+            raise HTTPException(status_code=404, detail="Chat not found or not owned by user")
+
+        # Delete all chat history
+        history_statement = select(Chat_history).where(Chat_history.chat_id == chat_id)
+        history_result = await session.exec(history_statement)
+        history_entries = history_result.all()
+        for entry in history_entries:
+            await session.delete(entry)
+
+        # Delete the chat 
+        await session.delete(chat)
+        await session.commit()
+        return {"message": "Chat deleted successfully."}
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete chat: {str(e)}")
