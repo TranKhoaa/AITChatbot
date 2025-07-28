@@ -16,3 +16,6 @@ class UserLoginSchema(BaseModel):
 class AdminLoginSchema(BaseModel):
     name: str
     password: str
+
+# class DecodeTokenSchema(BaseModel):
+#     token: str
