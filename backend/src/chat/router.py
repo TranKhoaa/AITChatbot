@@ -61,7 +61,6 @@ async def create_chat(
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to create chat: {str(e)}")
 
-
 @chat_router.post("/ask")
 async def ask_question(
     request: QuestionSchema,
