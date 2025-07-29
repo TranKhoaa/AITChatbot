@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef} from "react";
 import store from "../app/store";
 import axiosInstance from "../api/axiosInstance";
 import {
@@ -145,13 +145,14 @@ export default function UploadFile({ onClose }) {
       const res = await axiosInstance.post("admin/file/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
         },
       });
       console.log(res);
       if (
-        res.request.status === 200 ||
-        res.request.status === 201 ||
-        res.request.status === 202
+        res.status === 200 ||
+        res.status === 201 ||
+        res.status === 202
       ) {
         // const data = await res.json();
         alert("Processing...");
@@ -174,7 +175,7 @@ export default function UploadFile({ onClose }) {
   return visible ? (
     <main className="fixed z-[1000] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md container w-[800px] h-200">
       <article className="flex flex-col h-200 bg-gray-900 text-white p-4">
-        <div class="flex justify-between">
+        <div className="flex justify-between">
           <h1 className="font-semibold text-lg mb-2 p-2 ml-4">Files/Folders Upload</h1>
           <button
             onClick={onClose}
