@@ -8,6 +8,7 @@ class QuestionSchema(BaseModel):
     """Request model for question endpoint"""
     question: str
     chat_id: Optional[uuid.UUID] = None
+    model_id: str
     # translate_to_vietnamese: bool = False  # Optional flag for translation
 
 class CreateChatSchema(BaseModel):

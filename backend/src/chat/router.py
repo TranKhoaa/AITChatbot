@@ -120,7 +120,7 @@ async def ask_question(
         # Call LLM
         try:
             prompt = construct_prompt(request.question, context)
-            answer = query_ollama(prompt)
+            answer = query_ollama(prompt, request.model_id or "qwen2:0.5b")
         except Exception as e:
             raise HTTPException(
                 status_code=400, detail=f"Failed to generate answer: {str(e)}"

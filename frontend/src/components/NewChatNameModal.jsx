@@ -18,11 +18,6 @@ const [newName, setNewName] = useState(chat.name || "");
     }
   };
 
-  const handleSubmit = () => {
-    if (newName.trim() === "") return;
-    onRename(chat.id, newName);
-    onClose();
-  };
   const handleRenameChat = async (chat_id, newName) => {
     try {
       const res = await axiosInstance.put(`/user/chat/`, { id: chat_id, new_name: newName });
@@ -51,13 +46,13 @@ const [newName, setNewName] = useState(chat.name || "");
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-900"
+            className="cursor-pointer px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-900"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-900"
+            className="cursor-pointer px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-900"
             onClick={() => handleRenameChat(chat.id, newName)}
           >
             Rename

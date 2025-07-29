@@ -7,6 +7,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axiosInstance from '../api/axiosInstance';
 import { useParams, useNavigate } from 'react-router-dom';
+import ReactMarkdown from "react-markdown";
 
 const Chat = () => {
   const [message, setMessage] = useState([]);
@@ -64,11 +65,11 @@ const Chat = () => {
 
 
   const AI_MODELS = [
-    { id: "qwen3", name: "Qwen3" },
-    { id: "gpt4", name: "GPT-4" },
-    { id: "claude3", name: "Claude 3" },
-    { id: "llama2", name: "Llama 2" },
-    { id: "mistral", name: "Mistral 7B" }
+    { id: "qwen2:0.5b", name: "Qwen2" },
+    { id: "qwen3:0.6b", name: "Qwen3 (0.6b)" },
+    { id: "qwen3:lastest", name: "Qwen3" },
+    { id: "deepseek-r1:latest", name: "Deepseek rR" },
+    { id: "mistral:lastest", name: "Mistral" }
   ];
   const [selectedModel, setSelectedModel] = useState("qwen3");
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
@@ -111,6 +112,7 @@ const Chat = () => {
       const res = await axiosInstance.post("user/chat/ask", {
         chat_id: chatId, // ban đầu có thể là undefined nếu chưa tạo
         question: message,
+        model_id: selectedModel,
       });
 
       const { answer, chat_id: returnedChatId } = res.data;
@@ -161,11 +163,11 @@ const Chat = () => {
                       <div className="flex items-end justify-end space-x-2 message-bubble">
                         <div className="max-w-xs">
                           <div className="chat-gradient bg-gray-700 rounded-2xl rounded-tr-sm p-3 shadow-lg">
-                            <p className="text-white px-2 break-words">{msg.content}</p>
+                            <p className="text-white px-2 break-words"><ReactMarkdown>{msg.content}</ReactMarkdown></p>
 
                           </div>
                           <p className="flex space-x-2 text-xs mt-3 ml-2 justify-end">
-                            <button className='hover:text-gray-400 text-white' onClick={() => handleCopyMessage(msg.content)}>
+                            <button className='cursor-pointer hover:text-gray-400 text-white' onClick={() => handleCopyMessage(msg.content)}>
                               <MdContentCopy className='h-4 w-4' />
                             </button>
                           </p>
@@ -178,11 +180,11 @@ const Chat = () => {
                             {msg.id === "loading" ? (
                               <span className="italic animate-pulse">Generating answer...</span>
                             ) : (
-                              <p className="text-white">{msg.content}</p>
+                            <p className="text-white break-words"><ReactMarkdown>{msg.content}</ReactMarkdown></p>
                             )}
                           </div>
                           <p className="flex items-center gap-3 mt-4">
-                            <button className='hover:text-gray-400 text-white' onClick={() => handleCopyMessage(msg.content)}>
+                            <button className='cursor-pointer hover:text-gray-400 text-white' onClick={() => handleCopyMessage(msg.content)}>
                               <MdContentCopy className='h-4 w-4' />
                             </button>
                           </p>
@@ -206,10 +208,10 @@ const Chat = () => {
               className="bg-transparent border-none text-white placeholder:text-white/40 focus:ring-hidden outline-none w-full custom-scrollbar"
             />
             {/* Model Dropdown */}
-            <div className="relative flex flex-row space-x-110">
-              <div className="items-center gap-2 p-1">
+            <div className="relative flex flex-row">
+              <div className="items-center gap-2 p-1 group">
                 <button
-                  className="flex items-center gap-1 text-white hover:bg-white/10"
+                  className="cursor-pointer flex items-center gap-1 text-white group-hover:text-gray-300"
                   onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
                 >
                   {currentModelData.name}
@@ -223,7 +225,7 @@ const Chat = () => {
                       <button
                         key={model.id}
                         onClick={() => handleModelSelect(model.id)}
-                        className={`w-full px-4 py-2 text-left hover:bg-white/10 transition-colors ${selectedModel === model.id ? 'bg-white/5' : ''}`}
+                        className={`cursor-pointer w-full px-4 py-2 text-left hover:bg-white/10 transition-colors ${selectedModel === model.id ? 'bg-white/5' : ''}`}
                       >
                         <div className="flex flex-col">
                           <span className="text-white font-medium">{model.name}</span>
@@ -234,11 +236,17 @@ const Chat = () => {
                 </div>
               )}
               <button
-                className="p-3 justify-end text-white hover:bg-gray-600 rounded-full transition-colors"
+                className={`p-3 ml-auto rounded-full transition-colors ${isLoading
+                  ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                  : "cursor-pointer text-white hover:bg-gray-600"
+                  }`}
                 onClick={handleSendMessage}
+                disabled={isLoading}
+                title={isLoading ? "Waiting for response..." : "Send message"}
               >
                 <BsFillSendFill className="h-5 w-5" />
               </button>
+
             </div>
           </div>
         </div>

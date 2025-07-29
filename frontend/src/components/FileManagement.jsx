@@ -42,13 +42,14 @@ function FileManagement() {
     }
   };
 
-  const [files, setFiles] = useState([]);
+  const [file, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchFiles = async () => {
     try {
       const res = await axiosInstance.get("admin/file/");
       const data = res?.data;
+      console.log(data);
       setFiles(data);
     } catch (error) {
       console.error("Error loading file from DB:", error);
@@ -105,7 +106,7 @@ function FileManagement() {
   };
   
 
-  const filteredFiles = files.filter((file) => {
+  const filteredFiles = file.filter((file) => {
     //File name
     if (
       nameFilter.length > 3 &&
@@ -187,7 +188,7 @@ function FileManagement() {
           <div className="flex flex-wrap gap-4">
             {["docx", "xls", "pdf"].map((type) => (
               <div className="flex items-center gap-x-2" key={type}>
-                <input type="checkbox" className="accent-green-500 h-4 w-4" 
+                <input type="checkbox" className="cursor-pointer accent-green-500 h-4 w-4" 
                 onChange={(e) => handleTypeChange(type)}
                 />
                 <label>{type}</label>
@@ -268,13 +269,13 @@ function FileManagement() {
                   <td className="pr-2">{file.admin.name}</td>
                   <td className="text-center space-x-2">
                     <button
-                      className="hover:text-gray-400 text-white"
+                      className="cursor-pointer hover:text-gray-400 text-white"
                       onClick={() => handleDownloadFile(file.id, file.name)}
                     >
                       <AiOutlineDownload className="h-5 w-5" />
                     </button>
                     <button
-                      className="hover:text-gray-400 text-white"
+                      className="cursor-pointer hover:text-gray-400 text-white"
                       onClick={() => handleDeleteFile(file.id)}
                     >
                       <AiOutlineDelete className="h-5 w-5" />
@@ -294,7 +295,7 @@ function FileManagement() {
 
         {/* Pagination */}
         <div className="flex flex-col items-center gap-3 mt-6">
-          {files.length > 0 && (
+          {file.length > 0 && (
             <>
               <ReactPaginate
                 breakLabel="..."
@@ -314,6 +315,7 @@ function FileManagement() {
                 nextClassName="border px-3 py-1 rounded hover:bg-gray-700"
                 breakClassName="px-2"
                 disabledClassName="opacity-30"
+                className="cursor-pointer flex flex-row"
               />
 
               {/* Go to page input */}

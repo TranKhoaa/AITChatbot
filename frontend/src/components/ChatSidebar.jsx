@@ -106,7 +106,7 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                         <div className="space-y-4">
                             {/* New chat */}
                             <button
-                                className="flex items-center px-4 py-2.5 text-sm font-medium rounded-lg bg-white text-black group transition-all duration-200 hover:bg-gray-400 w-full"
+                                className="cursor-pointer flex items-center px-4 py-2.5 text-sm font-medium rounded-lg bg-white text-black group transition-all duration-200 hover:bg-gray-400 w-full"
                                 onClick={() => setIsModalOpen(true)}
                             >
                                 <FaPlus className="h-4 w-4 mr-3" />New chat
@@ -128,10 +128,11 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                                     <div className="flex-1 h-150 overflow-x-hidden overflow-y-auto custom-scrollbar pb-24 justify-center">
                                         {/* Chat History */}
                                         {chats.map((chat) => (
-                                            <div key={chat.chat_id} className="group relative flex items-center justify-between px-4 top-3 py-2 hover:bg-gray-800 rounded">
+                                            <div key={chat.chat_id} className="cursor-pointer group relative flex items-center justify-between px-4 top-3 py-2 hover:bg-gray-800 rounded group">
                                                 <button
-                                                    className="text-sm font-medium text-left text-gray-400 hover:text-white w-full pr-8 custom-scrollbar"
+                                                    className="cursor-pointer truncate max-w-[250px] whitespace-nowrap overflow-hidden text-sm group-hover:text-white font-medium text-left text-gray-400 w-full pr-8 custom-scrollbar"
                                                     onClick={() => navigate(`/chat/${chat.id}`)}
+                                                    title={chat.name || "Unnamed Chat"}
                                                 >
                                                     {chat.name || "Unnamed Chat"}
                                                 </button>
@@ -141,7 +142,7 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                                                         onClick={() =>
                                                             setActiveMenuChatId((prev) => (prev === chat.id ? null : chat.id))
                                                         }
-                                                        className="text-gray-400 mt-1 hover:text-white focus:outline-none"
+                                                        className="cursor-pointer hover:text-white text-gray-400 mt-1 focus:outline-none"
                                                     >
                                                         <FiMoreHorizontal />
                                                     </button>
@@ -149,7 +150,7 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                                                     {activeMenuChatId === chat.id && (
                                                         <div className="absolute right-0 mt-1 w-32 bg-gray-800 text-white rounded shadow z-10">
                                                             <button
-                                                                className="block w-full text-left px-4 py-2 hover:bg-gray-900"
+                                                                className="border-b border-slate-700 block w-full text-left px-4 py-2 hover:bg-gray-900"
                                                                 onClick={() => {
                                                                     setIsRenameModalOpen(true);
                                                                     setChatToRename(chat);
@@ -178,11 +179,11 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                             </div>
                         </div>
                     </nav>
-                    {/* User Profile */}
-                    <div className="fixed bottom-0 flex flex-col gap-y-2 mb-4">
+                    {/* Sign out, Settings */}
+                    <div className="fixed bottom-0 flex flex-col gap-y-4 mb-4">
                         <div className="w-64 h-10">
-                            <div className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white group transition-all duration-200 bottom-2">
-                                <button className="flex items-center px-4 py-2.5 text-sm font-medium text-white duration-200"
+                            <div className="flex items-center px-4 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white group transition-all duration-200 bottom-2">
+                                <button className="cursor-pointer flex items-center px-4 py-4 text-sm font-medium text-white duration-200"
                                     onClick={handleSignOut}>
                                     <FiLogOut className="h-5 w-5 mr-3" />Sign out
                                 </button>
@@ -190,9 +191,9 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                         </div>
 
                         <div className="w-64 h-10">
-                            <div className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white group transition-all duration-200 bottom-2">
+                            <div className="flex items-center px-4 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white group transition-all duration-200 bottom-2">
                                 <button
-                                    className="flex items-center px-4 py-2.5 text-sm font-medium text-white duration-200"
+                                    className="cursor-pointer flex items-center px-4 py-4 text-sm font-medium text-white duration-200"
                                     onClick={() => setIsSettingsOpen(true)}
                                 >
                                     <IoMdSettings className="h-5 w-5 mr-3"></IoMdSettings>Settings

@@ -29,10 +29,9 @@ def construct_prompt(question: str, chunks: List[str]) -> str:
         """
     return prompt
 
-def query_ollama(prompt: str) -> str:
-    """Call the Ollama API with the given prompt."""
+def query_ollama(prompt: str, model_id: str) -> str:
     payload = {
-        "model": OLLAMA_MODEL,
+        "model": model_id,  # ← dùng model người dùng chọn
         "prompt": prompt,
         "stream": False,
         "options": {
@@ -43,21 +42,15 @@ def query_ollama(prompt: str) -> str:
     try:
         response = requests.post(OLLAMA_API_URL, json=payload)
         response.raise_for_status()
-        answer = response.json().get("response", "Error: No response from Ollama")
-        # Extract the answer after "**Answer**:" if present
+        answer = response.json().get("response", "No response from Ollama")
 
-        """If using qwen3:latest uncomment this line"""
-        # if "**Answer**:" in answer:
-        #     return answer.split("**Answer**:")[1].strip()
-        """End comment"""
-
-        """Use for qwen3:0.6b"""
-        answer = re.sub(r"<think>.*?</think>", "", answer, flags=re.DOTALL)
-        """End"""
+        if "qwen" in model_id:
+            answer = re.sub(r"<think>.*?</think>", "", answer, flags=re.DOTALL)
 
         return answer.strip()
     except requests.RequestException as e:
         raise Exception(f"Ollama API request failed: {str(e)}")
+
 
 def translate_to_vietnam(answer: str) -> str:
     # Translate text to Vietnamese

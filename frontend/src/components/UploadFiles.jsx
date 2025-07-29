@@ -178,7 +178,7 @@ export default function UploadFile({ onClose }) {
           <h1 className="font-semibold text-lg mb-2 p-2 ml-4">Files/Folders Upload</h1>
           <button
             onClick={onClose}
-            className="top-1 p-4 right-1 absolute text-gray-500 hover:text-gray-600"
+            className="cursor-pointer top-1 p-4 right-1 absolute text-gray-500 hover:text-gray-600"
             title="Close"
           >
             <MdClose className="text-2xl h-7 w-7" />
@@ -205,7 +205,7 @@ export default function UploadFile({ onClose }) {
                 fileInputRef.current.value = null;
                 fileInputRef.current.click();
               }}
-              className="rounded-2xl h-15 w-40 px-3 py-1 bg-gray-800 hover:bg-gray-600"
+              className="cursor-pointer rounded-2xl h-15 w-40 px-3 py-1 bg-gray-800 hover:bg-gray-600"
             >
               Select Files
             </button>
@@ -224,7 +224,7 @@ export default function UploadFile({ onClose }) {
                 folderInputRef.current.value = null;
                 folderInputRef.current.click();
               }}
-              className="rounded-2xl h-15 w-40 px-3 py-1 bg-gray-800 hover:bg-gray-600"
+              className="cursor-pointer rounded-2xl h-15 w-40 px-3 py-1 bg-gray-800 hover:bg-gray-600"
             >
               Select Folders
             </button>
@@ -236,13 +236,13 @@ export default function UploadFile({ onClose }) {
         <footer className="flex justify-end mt-8 h-12 gap-x-3">
           <button
             onClick={handleCancel}
-            className="rounded p-6 py-1 bg-gray-800 hover:bg-gray-600"
+            className="cursor-pointer rounded p-6 py-1 bg-gray-800 hover:bg-gray-600"
           >
             Cancel
           </button>
           <button
             onClick={handleUpload}
-            className="rounded p-6 py-1 bg-gray-800 hover:bg-gray-600 text-white"
+            className="cursor-pointer rounded p-6 py-1 bg-gray-800 hover:bg-gray-600 text-white"
           >
             Upload Now
           </button>
