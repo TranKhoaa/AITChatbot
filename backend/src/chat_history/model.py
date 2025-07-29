@@ -16,6 +16,7 @@ class Chat_history(SQLModel, table=True):
 
     content: str
     source: str
+    model: str
     chat_id: uuid.UUID = Field(foreign_key="Chat.id", nullable=False)
     created_at: datetime = Field(
         sa_column=Column(pg.TIMESTAMP, default=datetime.now, index=True)
@@ -29,6 +30,5 @@ class Chat_history(SQLModel, table=True):
             "lazy": "selectin",
         },
     )
-
     def __repr__(self):
         return f"<Chat_history - chat_id: {self.chat_id} - src: {self.source}\n    {self.content}>"

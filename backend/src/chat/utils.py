@@ -4,6 +4,8 @@ import requests
 import re
 model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-mpnet-base-v2')
 
+
+
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 OLLAMA_MODEL = "qwen2:0.5b"
 
@@ -31,7 +33,7 @@ def construct_prompt(question: str, chunks: List[str]) -> str:
 
 def query_ollama(prompt: str, model_id: str) -> str:
     payload = {
-        "model": model_id,  # ← dùng model người dùng chọn
+        "model": model_id,
         "prompt": prompt,
         "stream": False,
         "options": {

@@ -20,16 +20,16 @@ const Chat = () => {
 
   const navigate = useNavigate();
 
-  const createNewChat = async () => {
-    try {
-      const res = await axiosInstance.post("user/chat/create", { name: "New Chat" });
-      const newChatId = res.data.chat_id;
-      setChatId(newChatId);
-      navigate(`${newChatId}`);
-    } catch (error) {
-      console.error("Failed to create chat:", error);
-    }
-  };
+  // const createNewChat = async () => {
+  //   try {
+  //     const res = await axiosInstance.post("user/chat/create", { name: "New Chat" });
+  //     const newChatId = res.data.chat_id;
+  //     setChatId(newChatId);
+  //     navigate(`${newChatId}`);
+  //   } catch (error) {
+  //     console.error("Failed to create chat:", error);
+  //   }
+  // };
 
   // useEffect(() => {
   //   if (!chat_id) {
@@ -50,6 +50,7 @@ const Chat = () => {
       try {
         const res = await axiosInstance.get(`user/chat/${chatId}/history`);
         setMessages(res.data);
+        console.log(res.data);
       } catch (err) {
         console.error("Error loading history:", err);
       }
@@ -65,13 +66,22 @@ const Chat = () => {
 
 
   const AI_MODELS = [
-    { id: "qwen2:0.5b", name: "Qwen2" },
+    { id: "qwen2:0.5b", name: "Qwen2 (0.5b)" },
     { id: "qwen3:0.6b", name: "Qwen3 (0.6b)" },
-    { id: "qwen3:lastest", name: "Qwen3" },
-    { id: "deepseek-r1:latest", name: "Deepseek rR" },
-    { id: "mistral:lastest", name: "Mistral" }
+    { id: "qwen3", name: "Qwen3" },
+    { id: "deepseek-r1", name: "Deepseek R1" },
+    { id: "mistral", name: "Mistral" }
   ];
-  const [selectedModel, setSelectedModel] = useState("qwen3");
+  const AI_MODELS_MAP = {
+    "qwen2:0.5b": "Qwen2 (0.5b)",
+    "qwen3:0.6b": "Qwen3 (0.6b)",
+    "qwen3": "Qwen3",
+    "deepseek-r1": "Deepseek R1",
+    "mistral": "Mistral"
+  };
+
+
+  const [selectedModel, setSelectedModel] = useState("null");
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const currentModelData = AI_MODELS.find(model => model.id === selectedModel) || AI_MODELS[0];
 
@@ -101,7 +111,8 @@ const Chat = () => {
     const loadingMessage = {
       id: "loading",
       source: "ai",
-      content: "Responding..."
+      content: "Responding...",
+      model_id: selectedModel || "qwen3 (0.6b)"
     };
 
     setMessages(prev => [...prev, userMessage, loadingMessage]);
@@ -115,7 +126,9 @@ const Chat = () => {
         model_id: selectedModel,
       });
 
-      const { answer, chat_id: returnedChatId } = res.data;
+      const { answer, chat_id: returnedChatId, model_id } = res.data;
+      console.log(res.data);
+      console.log(AI_MODELS_MAP[model_id]);
 
       // Nếu chatId chưa có (lần đầu tạo), cập nhật chatId và route
       if (!chatId) {
@@ -126,7 +139,12 @@ const Chat = () => {
       setMessages(prev =>
         prev.map(msg =>
           msg.id === "loading"
-            ? { id: messages.length + 2, source: "ai", content: answer }
+            ? {
+              id: messages.length + 2,
+              source: "ai",
+              content: answer,
+              model_id: model_id || "qwen3 (0.6b)" // fallback nếu server không trả về
+            }
             : msg
         )
       );
@@ -163,12 +181,13 @@ const Chat = () => {
                       <div className="flex items-end justify-end space-x-2 message-bubble">
                         <div className="max-w-xs">
                           <div className="chat-gradient bg-gray-700 rounded-2xl rounded-tr-sm p-3 shadow-lg">
-                            <p className="text-white px-2 break-words"><ReactMarkdown>{msg.content}</ReactMarkdown></p>
+                            <div className="text-white px-2 break-words"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
 
                           </div>
                           <p className="flex space-x-2 text-xs mt-3 ml-2 justify-end">
                             <button className='cursor-pointer hover:text-gray-400 text-white' onClick={() => handleCopyMessage(msg.content)}>
-                              <MdContentCopy className='h-4 w-4' />
+                              <MdContentCopy className='h-4 w-4'
+                                title="Copy message" />
                             </button>
                           </p>
                         </div>
@@ -180,14 +199,16 @@ const Chat = () => {
                             {msg.id === "loading" ? (
                               <span className="italic animate-pulse">Generating answer...</span>
                             ) : (
-                            <p className="text-white break-words"><ReactMarkdown>{msg.content}</ReactMarkdown></p>
+                              <div className="text-white break-words"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
                             )}
                           </div>
-                          <p className="flex items-center gap-3 mt-4">
+                          <div className="flex items-center gap-3 mt-4 font-bold">
+                            <p> {AI_MODELS_MAP[msg.model_id]}</p>
                             <button className='cursor-pointer hover:text-gray-400 text-white' onClick={() => handleCopyMessage(msg.content)}>
-                              <MdContentCopy className='h-4 w-4' />
+                              <MdContentCopy className='h-4 w-4'
+                                title="Copy message" />
                             </button>
-                          </p>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -219,7 +240,7 @@ const Chat = () => {
                 </button>
               </div>
               {isModelDropdownOpen && (
-                <div className="absolute bottom-full left-0 mb-2 w-30 h-fit bg-gray-800 border border-white/20 rounded-lg shadow-lg z-20">
+                <div className="absolute bottom-full left-0 mb-2 w-40 h-fit bg-gray-800 border border-white/20 rounded-lg shadow-lg z-20">
                   <div className="py-2">
                     {AI_MODELS.map((model) => (
                       <button

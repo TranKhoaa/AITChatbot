@@ -134,6 +134,7 @@ async def ask_question(
             content=request.question,
             source="user",
             chat_id=chat_id,
+            model=request.model_id or "qwen2:0.5b",
             created_at=datetime.now(),
             updated_at=datetime.now(),
         )
@@ -142,6 +143,7 @@ async def ask_question(
         answer_entry = Chat_history(
             content=final_answer,
             source="bot",
+            model=request.model_id or "qwen2:0.5b",
             chat_id=chat_id,
             created_at=datetime.now(),
             updated_at=datetime.now(),
@@ -155,6 +157,7 @@ async def ask_question(
             "question": request.question,
             "answer": final_answer,
             "chunk_ids": chunk_ids,
+            "model_id" : request.model_id,
         }
     except Exception as e:
         await session.rollback()
@@ -196,6 +199,7 @@ async def get_chat_history(
                 content=entry.content,
                 source=entry.source,
                 created_at=entry.created_at,
+                model_id=entry.model,
             )
             for entry in history
         ]

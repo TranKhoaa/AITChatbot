@@ -8,7 +8,7 @@ class QuestionSchema(BaseModel):
     """Request model for question endpoint"""
     question: str
     chat_id: Optional[uuid.UUID] = None
-    model_id: str
+    model_id: Optional[str] = "qwen2:0.5b"
     # translate_to_vietnamese: bool = False  # Optional flag for translation
 
 class CreateChatSchema(BaseModel):
@@ -20,6 +20,7 @@ class ChatHistorySchema(BaseModel):
     id: uuid.UUID
     content:str
     source: str
+    model_id: Optional[str] = "qwen2:0.5b"
     created_at: datetime
     class Config:
         orm_mode = True
