@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { BsFillSendFill } from 'react-icons/bs';
 import { MdContentCopy } from 'react-icons/md';
 import { LuRefreshCcw, LuSquarePen } from 'react-icons/lu';
@@ -7,6 +7,15 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axiosInstance from '../api/axiosInstance';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+
+function usePrevious(value) {
+  const ref = useRef();
+  useEffect(() => {
+    ref.current = value;
+  });
+  return ref.current;
+}
 import ReactMarkdown from "react-markdown";
 
 const Chat = () => {
@@ -14,41 +23,29 @@ const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const { chat_id } = useParams();
+  const previousChatId = usePrevious(chat_id);
   const [chatId, setChatId] = useState(chat_id);
-  const [editIndex, setEditIndex] = useState(null);       // index của tin nhắn đang chỉnh sửa
-  const [editedMessage, setEditedMessage] = useState(""); // nội dung tin nhắn đã chỉnh sửa
 
   const navigate = useNavigate();
+  const token = useSelector((state) => state.auth.token); // Get token from Redux
 
-  // const createNewChat = async () => {
-  //   try {
-  //     const res = await axiosInstance.post("user/chat/create", { name: "New Chat" });
-  //     const newChatId = res.data.chat_id;
-  //     setChatId(newChatId);
-  //     navigate(`${newChatId}`);
-  //   } catch (error) {
-  //     console.error("Failed to create chat:", error);
-  //   }
-  // };
+  const createNewChat = async () => {
+    try {
+      const res = await axiosInstance.post("user/chat/create", { name: "New Chat" });
+      const newChatId = res.data.chat_id;
+      navigate(`/chat/${newChatId}`);
+      return newChatId;
+    } catch (error) {
+      console.error("Failed to create chat:", error);
+    }
+  };
 
-  // useEffect(() => {
-  //   if (!chat_id) {
-  //     createNewChat();
-  //   } else {
-  //     setChatId(chat_id);
-  //   }
-  // }, [chat_id]);
 
   useEffect(() => {
-    setChatId(chat_id);
-  }, [chat_id]);
-
-  useEffect(() => {
-    if (!chatId) return;
-
+    if (!previousChatId && messages.length > 0) return;
     const fetchMessages = async () => {
       try {
-        const res = await axiosInstance.get(`user/chat/${chatId}/history`);
+        const res = await axiosInstance.get(`user/chat/${chat_id}/history`);
         setMessages(res.data);
         console.log(res.data);
       } catch (err) {
@@ -62,7 +59,7 @@ const Chat = () => {
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [chatId]);
+  }, [chat_id]);
 
 
   const AI_MODELS = [
@@ -100,17 +97,23 @@ const Chat = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!message.trim()) return;
+    let newChatId = chat_id;
+    if (chat_id === undefined) {
+      newChatId = await createNewChat();
+    }
 
+    if (!message.trim() || isLoading) return; // Prevent sending while loading
+
+    const currentMessage = message; // Store current message
     const userMessage = {
-      id: messages.length + 1,
+      id: Date.now(), // Use timestamp as unique ID
       source: "user",
-      content: message
+      content: currentMessage
     };
 
     const loadingMessage = {
-      id: "loading",
-      source: "ai",
+      id: `loading-${Date.now()}`, // Unique loading ID
+      source: "bot",
       content: "Responding...",
       model_id: selectedModel || "qwen3 (0.6b)"
     };
@@ -120,40 +123,66 @@ const Chat = () => {
     setIsLoading(true);
 
     try {
-      const res = await axiosInstance.post("user/chat/ask", {
-        chat_id: chatId, // ban đầu có thể là undefined nếu chưa tạo
-        question: message,
-        model_id: selectedModel,
+      const response = await fetch('http://127.0.0.1:8000/api/v1/user/chat/ask', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          chat_id: newChatId,
+          question: currentMessage,
+          model_id: selectedModel || "qwen3 (0.6b)"
+        })
       });
 
-      const { answer, chat_id: returnedChatId, model_id } = res.data;
-      console.log(res.data);
-      console.log(AI_MODELS_MAP[model_id]);
-
-      // Nếu chatId chưa có (lần đầu tạo), cập nhật chatId và route
-      if (!chatId) {
-        setChatId(returnedChatId);
-        navigate(`/chat/${returnedChatId}`); // đổi URL
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      setMessages(prev =>
-        prev.map(msg =>
-          msg.id === "loading"
-            ? {
-              id: messages.length + 2,
-              source: "ai",
-              content: answer,
-              model_id: model_id || "qwen3 (0.6b)" // fallback nếu server không trả về
-            }
-            : msg
-        )
-      );
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let streamingContent = "";
+      const streamingId = `streaming-${Date.now()}`;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+          console.log('Stream finished');
+          // Finalize the message with a permanent ID
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === streamingId
+                ? { ...msg, id: Date.now() + 1 }
+                : msg
+            )
+          );
+          break;
+        }
+
+        const chunk = decoder.decode(value, { stream: true });
+        streamingContent += chunk;
+
+        // Update the specific streaming message
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === streamingId
+              ? { ...msg, content: streamingContent }
+              : msg.id === loadingMessage.id
+                ? { ...msg, id: streamingId, content: streamingContent } // Change loading message to streaming ID
+                : msg
+          )
+        );
+
+        console.log('Received chunk:', chunk);
+      }
+
     } catch (err) {
       toast.error("Error communicating with server");
       console.error(err);
 
-      // Xoá "loading" nếu lỗi
-      setMessages(prev => prev.filter(msg => msg.id !== "loading"));
+      // Remove loading message if error
+      setMessages(prev => prev.filter(msg => msg.id !== loadingMessage.id));
     } finally {
       setIsLoading(false);
     }
@@ -196,17 +225,25 @@ const Chat = () => {
                       <div className="flex items-start space-x-2 message-bubble">
                         <div className="sm:max-w-60 lg:max-w-150 md:max-w-100">
                           <div className="rounded-2xl rounded-tl-sm p-0 shadow-lg">
-                            {msg.id === "loading" ? (
+                            {msg.id.toString().startsWith("loading") ? (
                               <span className="italic animate-pulse">Generating answer...</span>
+                            ) : msg.id.toString().startsWith("streaming") ? (
+                              <div>
+                                <span className="text-white">{msg.content}</span>
+                                <span className="animate-pulse">|</span>
+                              </div>
                             ) : (
                               <div className="text-white break-words"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
                             )}
                           </div>
-                          <div className="flex items-center gap-3 mt-4 font-bold">
+                          <p className="flex items-center gap-3 mt-4 font-bold">
                             <p> {AI_MODELS_MAP[msg.model_id]}</p>
-                            <button className='cursor-pointer hover:text-gray-400 text-white' onClick={() => handleCopyMessage(msg.content)}>
-                              <MdContentCopy className='h-4 w-4'
-                                title="Copy message" />
+                            <button
+                              className='hover:text-gray-400 text-white'
+                              onClick={() => handleCopyMessage(msg.content)}
+                              disabled={msg.id.toString().startsWith("loading") || msg.id.toString().startsWith("streaming")}
+                            >
+                              <MdContentCopy className='h-4 w-4' title="Copy message" />
                             </button>
                           </div>
                         </div>

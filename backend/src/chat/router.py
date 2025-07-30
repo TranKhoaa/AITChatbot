@@ -1,6 +1,7 @@
 from uuid import UUID
 from requests import session
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.auth.dependency import AccessTokenBearerUser
@@ -17,6 +18,7 @@ from .utils import (
     construct_prompt,
     query_ollama,
     translate_to_vietnam,
+    chat_gen,
 )
 from .schema import QuestionSchema, CreateChatSchema, ChatHistorySchema
 
@@ -62,7 +64,8 @@ async def create_chat(
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to create chat: {str(e)}")
 
-@chat_router.post("/ask")
+        
+@chat_router.post("/ask", status_code=status.HTTP_200_OK)
 async def ask_question(
     request: QuestionSchema,
     user_detail: dict = Depends(AccessTokenBearerUser),
@@ -116,48 +119,49 @@ async def ask_question(
         context = [chunk.content for chunk in similar_chunks]
         chunk_ids = [str(chunk.id) for chunk in similar_chunks]
 
-        # Call LLM
-        try:
-            prompt = construct_prompt(request.question, context)
-            answer = query_ollama(prompt, request.model_id or "qwen2:0.5b")
-        except Exception as e:
-            raise HTTPException(
-                status_code=400, detail=f"Failed to generate answer: {str(e)}"
-            )
-
-        # Translate answer to Vietnamese if requested
-        final_answer = translate_to_vietnam(answer)
-
-        # Store question and answer in Chat_history
+        # Store question in Chat_history
         question_entry = Chat_history(
             content=request.question,
             source="user",
             chat_id=chat_id,
             model=request.model_id or "qwen2:0.5b",
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
         )
         session.add(question_entry)
+        await session.commit()  # Commit question immediately
 
-        answer_entry = Chat_history(
-            content=final_answer,
-            source="bot",
-            model=request.model_id or "qwen2:0.5b",
-            chat_id=chat_id,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-        )
-        session.add(answer_entry)
+        # Call LLM
+        try:
+            prompt = construct_prompt(request.question, context)
+            return StreamingResponse(
+                chat_gen(prompt, session, chat_id, request.model_id),
+                media_type="text/event-stream",
+            )
+        #     answer = query_ollama(prompt)
+        except Exception as e:
+            raise HTTPException(
+                status_code=400, detail=f"Failed to generate answer: {str(e)}"
+            )
 
-        await session.commit()
+        # # Translate answer to Vietnamese if requested
+        # final_answer = translate_to_vietnam(answer)
 
-        return {
-            "chat_id": chat_id,
-            "question": request.question,
-            "answer": final_answer,
-            "chunk_ids": chunk_ids,
-            "model_id" : request.model_id,
-        }
+        # answer_entry = Chat_history(
+        #     content=final_answer,
+        #     source="bot",
+        #     chat_id=chat_id,
+        #     created_at=datetime.now(),
+        #     updated_at=datetime.now(),
+        # )
+        # session.add(answer_entry)
+
+        # await session.commit()
+
+        # return {
+        #     "chat_id": chat_id,
+        #     "question": request.question,
+        #     "answer": final_answer,
+        #     "chunk_ids": chunk_ids,
+        # }
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
