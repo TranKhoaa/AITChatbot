@@ -238,7 +238,7 @@ function SignUpPage() {
           <div className="flex flex-col gap-y-5 items-center md:flex-row md:gap-x-14 md:items-center">
             <button
               type="submit"
-              className="w-40 h-10 rounded-full xl:h-14 bg-black hover:bg-slate-800 text-white text-sm xl:text-base"
+              className="cursor-pointer w-40 h-10 rounded-full xl:h-14 bg-black hover:bg-slate-800 text-white text-sm xl:text-base"
             >
               Sign up
             </button>

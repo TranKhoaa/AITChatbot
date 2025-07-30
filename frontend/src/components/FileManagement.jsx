@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import filterIcon from "../assets/filter_icon.svg";
 import wordIcon from "../assets/word_icon.svg";
 import excelIcon from "../assets/excel_icon.svg";
@@ -7,24 +7,34 @@ import ReactPaginate from "react-paginate";
 import axiosInstance from "../api/axiosInstance";
 import { AiOutlineDownload, AiOutlineDelete } from "react-icons/ai";
 import "react-toastify/dist/ReactToastify.css";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchFiles } from "../features/filesSlice";
 
 function FileManagement() {
   const getIconByType = (type) => {
     if (!type || typeof type !== "string") return "";
     switch (type.toLowerCase()) {
       case ".docx":
-      case ".doc":
-        return wordIcon;
+      case ".doc": return wordIcon;
       case ".xls":
-      case ".xlsx":
-        return excelIcon;
-      case ".pdf":
-        return pdfIcon;
-      default:
-        return "";
+      case ".xlsx": return excelIcon;
+      case ".pdf": return pdfIcon;
+      default: return "";
     }
   };
+  const dispatch = useDispatch();
+  const files = useSelector((state) => state.files.files);
+  const loading = useSelector((state) => state.files.loading);
+
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const filesPerPage = 15;
+
+  useEffect(() => {
+    dispatch(fetchFiles());
+  }, [dispatch]);
+
   const handleDownloadFile = async (fileId, fileName) => {
     try {
       const res = await axiosInstance.get(`admin/file/${fileId}`, {
@@ -42,37 +52,14 @@ function FileManagement() {
     }
   };
 
-  const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchFiles = async () => {
-    try {
-      const res = await axiosInstance.get("admin/file/");
-      const data = res?.data;
-      setFiles(data);
-    } catch (error) {
-      console.error("Error loading file from DB:", error);
-      setFiles([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchFiles();
-  }, []);
-
   const handleDeleteFile = async (fileId) => {
-    const confirm = window.confirm(
-      "Are you sure you want to delete this file?"
-    );
-    if (!confirm) return;
+    if (!window.confirm("Are you sure you want to delete this file?")) return;
 
     try {
       const res = await axiosInstance.delete(`admin/file/${fileId}`);
-      if (res.request.status === 200 || res.request.status === 204) {
+      if (res.status === 200 || res.status === 204) {
         toast.success("File deleted successfully!");
-        fetchFiles();
+        dispatch(fetchFiles());
       } else {
         toast.error("Cannot delete file!");
       }
@@ -84,11 +71,10 @@ function FileManagement() {
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-GB");
+    return new Date(dateString).toLocaleDateString("en-GB");
   };
 
-  const [nameFilter, setNameFilter] = useState("");
+   const [nameFilter, setNameFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState([]); 
   const [uploaderFilter, setUploaderFilter] = useState("");
   const [createdFrom, setCreatedFrom] = useState("");
@@ -145,24 +131,13 @@ function FileManagement() {
     return true;
   });
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const filesPerPage = 15;
   const indexOfLastFile = currentPage * filesPerPage;
   const indexOfFirstFile = indexOfLastFile - filesPerPage;
-
-  // const currentFiles = files.slice(indexOfFirstFile, indexOfLastFile);
-  // const totalPages = Math.max(1, Math.ceil(files.length / filesPerPage));
-
   const currentFiles = filteredFiles.slice(indexOfFirstFile, indexOfLastFile);
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredFiles.length / filesPerPage)
-  );
+  const totalPages = Math.max(1, Math.ceil(filteredFiles.length / filesPerPage));
 
   const paginate = (pageNumber) => {
-    if (pageNumber >= 1 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-    }
+    if (pageNumber >= 1 && pageNumber <= totalPages) setCurrentPage(pageNumber);
   };
 
   return (
@@ -187,7 +162,7 @@ function FileManagement() {
           <div className="flex flex-wrap gap-4">
             {["docx", "xls", "pdf"].map((type) => (
               <div className="flex items-center gap-x-2" key={type}>
-                <input type="checkbox" className="accent-green-500 h-4 w-4" 
+                <input type="checkbox" className="cursor-pointer accent-green-500 h-4 w-4" 
                 onChange={(e) => handleTypeChange(type)}
                 />
                 <label>{type}</label>
@@ -268,13 +243,13 @@ function FileManagement() {
                   <td className="pr-2">{file.admin.name}</td>
                   <td className="text-center space-x-2">
                     <button
-                      className="hover:text-gray-400 text-white"
+                      className="cursor-pointer hover:text-gray-400 text-white"
                       onClick={() => handleDownloadFile(file.id, file.name)}
                     >
                       <AiOutlineDownload className="h-5 w-5" />
                     </button>
                     <button
-                      className="hover:text-gray-400 text-white"
+                      className="cursor-pointer hover:text-gray-400 text-white"
                       onClick={() => handleDeleteFile(file.id)}
                     >
                       <AiOutlineDelete className="h-5 w-5" />
@@ -314,6 +289,7 @@ function FileManagement() {
                 nextClassName="border px-3 py-1 rounded hover:bg-gray-700"
                 breakClassName="px-2"
                 disabledClassName="opacity-30"
+                className="cursor-pointer flex flex-row"
               />
 
               {/* Go to page input */}

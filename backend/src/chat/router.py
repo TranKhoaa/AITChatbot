@@ -12,6 +12,7 @@ from sqlmodel import select
 from typing import List, Optional
 from datetime import datetime
 from src.db.vector_search import VectorSearch
+from .schema import RenameChatSchema
 from .utils import (
     question_embedding,
     construct_prompt,
@@ -27,7 +28,7 @@ chat_router = APIRouter()
 @chat_router.get("/")
 async def get_chats(
     user_detail: dict = Depends(AccessTokenBearerUser),
-    session: AsyncSession = Depends(get_session), 
+    session: AsyncSession = Depends(get_session),
 ):
     """Retrieve all chats for the authenticated user"""
     try:
@@ -63,7 +64,7 @@ async def create_chat(
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to create chat: {str(e)}")
 
-
+        
 @chat_router.post("/ask", status_code=status.HTTP_200_OK)
 async def ask_question(
     request: QuestionSchema,
@@ -123,6 +124,7 @@ async def ask_question(
             content=request.question,
             source="user",
             chat_id=chat_id,
+            model=request.model_id or "qwen2:0.5b",
         )
         session.add(question_entry)
         await session.commit()  # Commit question immediately
@@ -131,7 +133,7 @@ async def ask_question(
         try:
             prompt = construct_prompt(request.question, context)
             return StreamingResponse(
-                chat_gen(prompt, session, chat_id),
+                chat_gen(prompt, session, chat_id, request.model_id),
                 media_type="text/event-stream",
             )
         #     answer = query_ollama(prompt)
@@ -200,6 +202,7 @@ async def get_chat_history(
                 content=entry.content,
                 source=entry.source,
                 created_at=entry.created_at,
+                model_id=entry.model,
             )
             for entry in history
         ]
@@ -224,7 +227,9 @@ async def delete_chat(
         result = await session.exec(statement)
         chat = result.first()
         if not chat:
-            raise HTTPException(status_code=404, detail="Chat not found or not owned by user")
+            raise HTTPException(
+                status_code=404, detail="Chat not found or not owned by user"
+            )
 
         # Delete all chat history
         history_statement = select(Chat_history).where(Chat_history.chat_id == chat_id)
@@ -233,10 +238,45 @@ async def delete_chat(
         for entry in history_entries:
             await session.delete(entry)
 
-        # Delete the chat 
+        # Delete the chat
         await session.delete(chat)
         await session.commit()
         return {"message": "Chat deleted successfully."}
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to delete chat: {str(e)}")
+
+@chat_router.put("/")
+async def rename_chat(
+    payload: RenameChatSchema,
+    user_detail: dict = Depends(AccessTokenBearerUser),
+    session: AsyncSession = Depends(get_session),
+):
+    """Rename a chat if it belongs to the authenticated user."""
+    try:
+        # Kiểm tra quyền sở hữu chat
+        statement = select(Chat).where(
+            Chat.id == payload.id, Chat.user_id == user_detail["data"]["id"]
+        )
+        result = await session.exec(statement)
+        chat = result.first()
+        if not chat:
+            raise HTTPException(
+                status_code=404, detail="Chat not found or not owned by user"
+            )
+
+        # Đổi tên chat
+        chat.name = payload.new_name
+        chat.updated_at = datetime.now()
+        session.add(chat)
+        await session.commit()
+        await session.refresh(chat)
+
+        return {
+            "message": "Chat renamed successfully.",
+            "id": str(chat.id),
+            "new_name": chat.name,
+        }
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to rename chat: {str(e)}")

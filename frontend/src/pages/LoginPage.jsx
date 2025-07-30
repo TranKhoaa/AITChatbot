@@ -173,7 +173,7 @@ function LoginPage() {
           </div>
 
           <div className="flex flex-col gap-x-28 items-center md:items-start">
-            <button className="w-40 h-10 rounded-full xl:h-14 bg-black hover:bg-slate-800 text-white text-sm lg:text-base">
+            <button className="cursor-pointer w-40 h-10 rounded-full xl:h-14 bg-black hover:bg-slate-800 text-white text-sm lg:text-base">
               Log In
             </button>
             {loginError && (

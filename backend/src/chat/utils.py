@@ -8,8 +8,10 @@ from src.chat_history.model import Chat_history
 from langdetect import detect
 from deep_translator import GoogleTranslator
 
+
+
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "qwen2:0.5b"
+OLLAMA_MODEL = "qwen3:0.6b"
 
 
 def question_embedding(query: str, max_length=1024):
@@ -36,10 +38,10 @@ def construct_prompt(question: str, chunks: List[str]) -> str:
     return prompt
 
 
-def query_ollama(prompt: str) -> str:
-    """Call the Ollama API with the given prompt."""
+def query_ollama(prompt: str, model_id: str) -> str:
+    """Call the Ollama API with the given prompt. sync function"""
     payload = {
-        "model": OLLAMA_MODEL,
+        "model": model_id,
         "prompt": prompt,
         "stream": False,
         "options": {"temperature": 0.6, "max_tokens": 500},
@@ -47,31 +49,24 @@ def query_ollama(prompt: str) -> str:
     try:
         response = requests.post(OLLAMA_API_URL, json=payload)
         response.raise_for_status()
-        answer = response.json().get("response", "Error: No response from Ollama")
-        # Extract the answer after "**Answer**:" if present
+        answer = response.json().get("response", "No response from Ollama")
 
-        """If using qwen3:latest uncomment this line"""
-        # if "**Answer**:" in answer:
-        #     return answer.split("**Answer**:")[1].strip()
-        """End comment"""
-
-        """Use for qwen3:0.6b"""
-        answer = re.sub(r"<think>.*?</think>", "", answer, flags=re.DOTALL)
-        """End"""
+        if "qwen" in model_id:
+            answer = re.sub(r"<think>.*?</think>", "", answer, flags=re.DOTALL)
 
         return answer.strip()
     except requests.RequestException as e:
         raise Exception(f"Ollama API request failed: {str(e)}")
 
 
-async def chat_gen(prompt: str, session: AsyncSession, chat_id: str):
+async def chat_gen(prompt: str, session: AsyncSession, chat_id: str, model_id: str):
     message = {"role": "user", "content": prompt}
     end_think = False  # Set to True to start yielding content immediately
     answer = ""
     
     try:
         async for part in await AsyncClient().chat(
-            model="qwen3:8b",
+            model=model_id,
             options={"temperature": 0.6, "max_tokens": 500},
             messages=[message],
             stream=True,

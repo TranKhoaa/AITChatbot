@@ -51,7 +51,7 @@ function Header() {
           </select>
 
           <button
-            className="w-32 rounded-lg h-10 bg-white text-black border border-slate-500  lg:bg-black hover:bg-slate-800 lg:text-white"
+            className="cursor-pointer w-32 rounded-lg h-10 bg-white text-black border border-slate-500  lg:bg-black hover:bg-slate-800 lg:text-white"
             onClick={handleClick}
           >
             Log in

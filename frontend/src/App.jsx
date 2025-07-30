@@ -7,25 +7,93 @@ import Chat from "./pages/Chat";
 import ChatSidebar from "./components/ChatSidebar";
 import ChatHeader from "./components/ChatHeader";
 import Settings from "./components/Settings";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ToastContainer } from "react-toastify";
-import { Provider } from "react-redux";
+import { Provider, useSelector, useDispatch } from "react-redux";
 import store from "./app/store";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import AdminRoute from "./routes/AdminRoute";
 import PrivateRoute from "./routes/PrivateRoute";
 import NewChatModal from "./components/NewChatModal";
-import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { fetchFiles } from "./features/filesSlice";
 
 const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const { user, token } = useSelector((state) => state.auth);
+  const wsRef = useRef(null);
+const dispatch = useDispatch();
+
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  useEffect(() => {
+    if (user?.role === "admin" && token) {
+      const ws = new WebSocket(`ws://localhost:8000/api/v1/admin/file/ws/processing?admin_id=${user.id}`)
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log("WebSocket connected for admin");
+      };
+
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        const toastId = localStorage.getItem("uploadToastId");
+
+        if (message.event === "processing_complete") {
+          dispatch(fetchFiles());
+          if (toastId) {
+            toast.update(toastId, {
+              render: "Files has been processed successfully.",
+              type: "success",
+              isLoading: false,
+              autoClose: 3000,
+              closeOnClick: true,
+            });
+            localStorage.removeItem("uploadToastId");
+          } else {
+            toast.success("File has been processed successfully.");
+          }
+
+          console.log("Processing result:", message.data);
+
+        } else if (message.event === "processing_error") {
+          if (toastId) {
+            toast.update(toastId, {
+              render: `Processing failed: ${message.error}`,
+              type: "error",
+              isLoading: false,
+              autoClose: 5000,
+              closeOnClick: true,
+            });
+            localStorage.removeItem("uploadToastId");
+          } else {
+            toast.error(`Processing error: ${message.error}`);
+          }
+
+          console.error("Processing error:", message.error);
+        }
+      };
+
+
+      ws.onerror = (error) => {
+        console.warn("WebSocket error:", error);
+      };
+
+      ws.onclose = () => {
+        console.log("WebSocket disconnected for admin");
+      };
+
+      return () => {
+        ws.close();
+      };
+    }
+  }, [user, token]);
+
   // Role-based redirect logic for '/'
-  const { user, token } = useSelector((state) => state.auth);
+
   const AuthRedirect = ({ children }) => {
     if (token) {
       if (user?.role === "admin") return <Navigate to="/admin" replace />;

@@ -9,7 +9,7 @@ const ChatHeader = ({toggleSidebar})=> {
         <div className="flex justify-between h-16">
           <div className="flex fixed p-4 left-3 items-center justify-start space-x-1">
             <button 
-            className="text-2xl font-bold hover:text-gray-400" 
+            className="cursor-w-resize text-2xl font-bold hover:text-gray-400" 
             onClick={toggleSidebar}
             >
             <FiMenu />

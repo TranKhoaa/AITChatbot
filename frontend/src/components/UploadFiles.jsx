@@ -1,4 +1,5 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useSelector } from "react-redux";
 import store from "../app/store";
 import axiosInstance from "../api/axiosInstance";
 import {
@@ -10,6 +11,8 @@ import {
   FaChevronDown,
 } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
+import { toast } from "react-toastify";
+
 
 export default function UploadFile({ onClose }) {
   const [files, setFiles] = useState([]);
@@ -132,7 +135,7 @@ export default function UploadFile({ onClose }) {
       })}
     </ul>
   );
-  const token = store.getState().auth.token;
+
   const handleUpload = async () => {
     if (files.length === 0) return;
 
@@ -145,23 +148,21 @@ export default function UploadFile({ onClose }) {
       const res = await axiosInstance.post("admin/file/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${store.getState().auth.token}`,
         },
       });
-      console.log(res);
-      if (
-        res.request.status === 200 ||
-        res.request.status === 201 ||
-        res.request.status === 202
-      ) {
-        // const data = await res.json();
-        alert("Processing...");
+
+      if ([200, 201, 202].includes(res.status)) {
+        // Show loading toast
+        const id = toast.loading("Processing...");
+        localStorage.setItem("uploadToastId", id);
         onClose();
       } else {
-        alert("Error uploading!");
+        toast.error("Upload failed.");
       }
     } catch (err) {
       console.error("Upload error:", err);
-      alert("An error occurred while uploading.");
+      toast.error("An error occurred during upload.");
     }
   };
 
@@ -174,11 +175,11 @@ export default function UploadFile({ onClose }) {
   return visible ? (
     <main className="fixed z-[1000] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md container w-[800px] h-200">
       <article className="flex flex-col h-200 bg-gray-900 text-white p-4">
-        <div class="flex justify-between">
+        <div className="flex justify-between">
           <h1 className="font-semibold text-lg mb-2 p-2 ml-4">Files/Folders Upload</h1>
           <button
             onClick={onClose}
-            className="top-1 p-4 right-1 absolute text-gray-500 hover:text-gray-600"
+            className="cursor-pointer top-1 p-4 right-1 absolute text-gray-500 hover:text-gray-600"
             title="Close"
           >
             <MdClose className="text-2xl h-7 w-7" />
@@ -205,7 +206,7 @@ export default function UploadFile({ onClose }) {
                 fileInputRef.current.value = null;
                 fileInputRef.current.click();
               }}
-              className="rounded-2xl h-15 w-40 px-3 py-1 bg-gray-800 hover:bg-gray-600"
+              className="cursor-pointer rounded-2xl h-15 w-40 px-3 py-1 bg-gray-800 hover:bg-gray-600"
             >
               Select Files
             </button>
@@ -224,7 +225,7 @@ export default function UploadFile({ onClose }) {
                 folderInputRef.current.value = null;
                 folderInputRef.current.click();
               }}
-              className="rounded-2xl h-15 w-40 px-3 py-1 bg-gray-800 hover:bg-gray-600"
+              className="cursor-pointer rounded-2xl h-15 w-40 px-3 py-1 bg-gray-800 hover:bg-gray-600"
             >
               Select Folders
             </button>
@@ -236,13 +237,13 @@ export default function UploadFile({ onClose }) {
         <footer className="flex justify-end mt-8 h-12 gap-x-3">
           <button
             onClick={handleCancel}
-            className="rounded p-6 py-1 bg-gray-800 hover:bg-gray-600"
+            className="cursor-pointer rounded p-6 py-1 bg-gray-800 hover:bg-gray-600"
           >
             Cancel
           </button>
           <button
             onClick={handleUpload}
-            className="rounded p-6 py-1 bg-gray-800 hover:bg-gray-600 text-white"
+            className="cursor-pointer rounded p-6 py-1 bg-gray-800 hover:bg-gray-600 text-white"
           >
             Upload Now
           </button>
