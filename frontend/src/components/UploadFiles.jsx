@@ -1,4 +1,5 @@
-import React, { useState, useRef} from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useSelector } from "react-redux";
 import store from "../app/store";
 import axiosInstance from "../api/axiosInstance";
 import {
@@ -10,6 +11,8 @@ import {
   FaChevronDown,
 } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
+import { toast } from "react-toastify";
+
 
 export default function UploadFile({ onClose }) {
   const [files, setFiles] = useState([]);
@@ -132,7 +135,7 @@ export default function UploadFile({ onClose }) {
       })}
     </ul>
   );
-  const token = store.getState().auth.token;
+
   const handleUpload = async () => {
     if (files.length === 0) return;
 
@@ -145,24 +148,21 @@ export default function UploadFile({ onClose }) {
       const res = await axiosInstance.post("admin/file/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${store.getState().auth.token}`,
         },
       });
-      console.log(res);
-      if (
-        res.status === 200 ||
-        res.status === 201 ||
-        res.status === 202
-      ) {
-        // const data = await res.json();
-        alert("Processing...");
+
+      if ([200, 201, 202].includes(res.status)) {
+        // Show loading toast
+        const id = toast.loading("Processing...");
+        localStorage.setItem("uploadToastId", id);
         onClose();
       } else {
-        alert("Error uploading!");
+        toast.error("Upload failed.");
       }
     } catch (err) {
       console.error("Upload error:", err);
-      alert("An error occurred while uploading.");
+      toast.error("An error occurred during upload.");
     }
   };
 
