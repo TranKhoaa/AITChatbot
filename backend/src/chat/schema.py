@@ -6,8 +6,8 @@ from datetime import datetime
 
 class QuestionSchema(BaseModel):
     """Request model for question endpoint"""
+    chat_id: Optional[str] = None
     question: str
-    chat_id: Optional[uuid.UUID] = None
     # translate_to_vietnamese: bool = False  # Optional flag for translation
 
 class CreateChatSchema(BaseModel):

@@ -1,20 +1,15 @@
 import json
 from docx import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from sentence_transformers import SentenceTransformer
+from src.shared.SentenceTransformer import model
 from PyPDF2 import PdfReader
 import pandas as pd
 import numpy as np
 
 
-model = SentenceTransformer(
-    "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
-)
-
-
 def read_docx_file(file_path):
     """
-    Reads docx file 
+    Reads docx file
     """
     doc = Document(file_path)
     fullText = []
@@ -25,7 +20,7 @@ def read_docx_file(file_path):
 
 def read_pdf_file(file_path):
     """
-    Reads pdf file 
+    Reads pdf file
     """
     doc = PdfReader(file_path)
     fullText = []
@@ -33,11 +28,12 @@ def read_pdf_file(file_path):
         page_text = page.extract_text()
         if page_text:
             fullText.append(page_text)
-    return '\n'.join(fullText)
+    return "\n".join(fullText)
+
 
 def read_excel_file(file_path):
     """
-    Reads an Excel file 
+    Reads an Excel file
     """
     xls = pd.ExcelFile(file_path)
     all_rows = []
@@ -46,7 +42,8 @@ def read_excel_file(file_path):
         for _, row in df.iterrows():
             row_json = json.dumps(row.to_dict(), ensure_ascii=False)
             all_rows.append(row_json)
-    return all_rows 
+    return all_rows
+
 
 def chunk_text(text):
     split_text = RecursiveCharacterTextSplitter(chunk_size=256, chunk_overlap=64)

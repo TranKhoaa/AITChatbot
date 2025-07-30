@@ -7,7 +7,7 @@ from fastapi import (
     UploadFile,
     BackgroundTasks,
 )
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from fastapi.responses import FileResponse
 from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
