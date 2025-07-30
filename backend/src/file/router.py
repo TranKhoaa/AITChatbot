@@ -6,8 +6,11 @@ from fastapi import (
     status,
     UploadFile,
     BackgroundTasks,
+    WebSocket,
+    WebSocketDisconnect,
+    Query,
 )
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import (ProcessPoolExecutor, ThreadPoolExecutor)
 from fastapi.responses import FileResponse
 from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -23,7 +26,8 @@ from typing import List
 import uuid
 from src.file.service import process_files, FileInfoList
 from src.config import Config
-
+import json
+from src.file.manager import WebSocketManager
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB limit
 UPLOAD_DIR = os.path.expanduser("./uploads")
@@ -31,10 +35,21 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)  # Create directory if it doesn't exist
 
 
 file_router = APIRouter()
+websocket_manager = WebSocketManager()
 
+@file_router.websocket("/ws/processing")
+async def websocket_endpoint(websocket: WebSocket, admin_id: str = Query(None)):
+    # print("WebSocket client trying to connect...")
+    await websocket_manager.connect(websocket, admin_id)
+    # print("WebSocket client connected.")
+    try:
+        while True:
+            await websocket.receive_text()  # Keep connection alive
+    except WebSocketDisconnect:
+        websocket_manager.disconnect(websocket, admin_id)
 
 async def process_files_in_background(
-    files_info_list: FileInfoList, admin_id: str, database_url: str
+    files_info_list: FileInfoList, admin_id: str, database_url: str, upload_id: str
 ):
     """
     Hàm chạy trong background để xử lý files mà không làm nghẽn API
@@ -46,7 +61,8 @@ async def process_files_in_background(
         start_time = time.time()
 
         # Sử dụng ProcessPoolExecutor trong background task
-        with ProcessPoolExecutor() as executor:
+        # with ProcessPoolExecutor() as executor:
+        with ThreadPoolExecutor() as executor:
             loop = asyncio.get_event_loop()
 
             # Chạy process_files trong executor
@@ -54,20 +70,39 @@ async def process_files_in_background(
                 executor, process_files, files_info_list, admin_id, database_url
             )
 
+        serialized_result = [
+            {
+                "filename": item["filename"],
+                "status": item["status"],
+                "file_id": str(item["file_id"]) if "file_id" in item else None
+            }
+            for item in result if item["status"]
+        ]
+
         end_time = time.time()
         duration = end_time - start_time
 
         print(f"Background file processing completed in {duration:.2f} seconds")
-        print(f"Processing result: {result}")
+        print(f"Processing result: {serialized_result}")
 
-        # Ở đây bạn có thể thêm logic để gửi thông báo WebSocket
-        # hoặc update database về trạng thái xử lý
+        # Broadcast processing result via WebSocket
+        # status_list = [item["status"] for item in result]
+        await websocket_manager.broadcast(admin_id, {
+            "event": "processing_complete",
+            "data": serialized_result,
+            "uploadId": upload_id
+        })
 
         return result
 
     except Exception as e:
         print(f"Error in background file processing: {str(e)}")
-        # Có thể log error hoặc gửi thông báo lỗi qua WebSocket
+        # Broadcast error via WebSocket
+        await websocket_manager.broadcast(admin_id, {
+            "event": "processing_error",
+            "error": str(e),
+            "uploadId": upload_id
+        })
         return {"error": str(e)}
 
 
@@ -105,15 +140,16 @@ async def upload_files(
     files_info_list = await asyncio.gather(*get_file_info_tasks)
 
     admin_id = admin_detail["data"]["id"]
-
+    upload_id = str(uuid.uuid4())
     # Thêm task vào background tasks để xử lý bất đồng bộ
     background_tasks.add_task(
-        process_files_in_background, files_info_list, admin_id, Config.DATABASE_URL
+        process_files_in_background, files_info_list, admin_id, Config.DATABASE_URL, upload_id
     )
 
     return {
         "message": "Files are being processed in the background. You will be notified upon completion.",
         "files": [{"filename": file.filename} for file in files],
+        "uploadID" : upload_id,
     }
 
 
@@ -143,7 +179,7 @@ async def download_file(
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(
         path=file_metadata.link,
-        filename=file_metadata.name,  # Use original filename instead of basename
+        filename=file_metadata.name,
         media_type=file_metadata.media_type,
     )
 
