@@ -94,6 +94,7 @@ async def chat_gen(prompt: str, session: AsyncSession, chat_id: str, model_id: s
                         content=final_answer,
                         source="bot",
                         chat_id=chat_id,
+                        model=model_id,
                     )
                     session.add(answer_entry)
                     await session.commit()

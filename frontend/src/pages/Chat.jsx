@@ -65,14 +65,14 @@ const Chat = () => {
   const AI_MODELS = [
     { id: "qwen2:0.5b", name: "Qwen2 (0.5b)" },
     { id: "qwen3:0.6b", name: "Qwen3 (0.6b)" },
-    { id: "qwen3", name: "Qwen3" },
+    { id: "qwen3:8b", name: "Qwen3 (8b)" },
     { id: "deepseek-r1", name: "Deepseek R1" },
     { id: "mistral", name: "Mistral" }
   ];
   const AI_MODELS_MAP = {
     "qwen2:0.5b": "Qwen2 (0.5b)",
     "qwen3:0.6b": "Qwen3 (0.6b)",
-    "qwen3": "Qwen3",
+    "qwen3:8b": "Qwen3 (8b)",
     "deepseek-r1": "Deepseek R1",
     "mistral": "Mistral"
   };
@@ -236,7 +236,7 @@ const Chat = () => {
                               <div className="text-white break-words"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
                             )}
                           </div>
-                          <p className="flex items-center gap-3 mt-4 font-bold">
+                          <div className="flex items-center gap-3 mt-4 font-bold">
                             <p> {AI_MODELS_MAP[msg.model_id]}</p>
                             <button
                               className='hover:text-gray-400 text-white'
