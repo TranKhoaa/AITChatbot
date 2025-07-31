@@ -138,9 +138,9 @@ const dispatch = useDispatch();
             path="/chat"
             element={
               <PrivateRoute>
-                <div>
+                <div className="flex flex-col h-screen w-screen">
                   <ChatHeader toggleSidebar={toggleSidebar} />
-                  <main className="flex top-16 h-fit bg-black">
+                  <main className="flex flex-1 bg-black min-h-0">
                     <ChatSidebar isSidebarOpen={isSidebarOpen} />
                     <Chat />
                   </main>
@@ -152,9 +152,9 @@ const dispatch = useDispatch();
             path="/chat/:chat_id"
             element={
               <PrivateRoute>
-                <div>
+                <div className="flex flex-col h-screen w-screen">
                   <ChatHeader toggleSidebar={toggleSidebar} />
-                  <main className="flex top-16 h-fit bg-black">
+                  <main className="flex flex-1 bg-black min-h-0">
                     <ChatSidebar isSidebarOpen={isSidebarOpen} />
                     <Chat />
                   </main>
