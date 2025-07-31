@@ -7,6 +7,7 @@ import "../App.css"
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../features/auth/authSlice";
+import { logoutUser } from "../features/auth/authAPI";
 import axiosInstance from "../api/axiosInstance";
 import React, { useState, useEffect } from "react";
 import NewChatModal from './NewChatModal';
@@ -22,6 +23,7 @@ const ChatSidebar = ({ isSidebarOpen }) => {
     const [activeMenuChatId, setActiveMenuChatId] = useState(null);
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
     const [chatToRename, setChatToRename] = useState(null); // lưu thông tin chat đang rename
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const fetchChats = async () => {
         try {
@@ -59,11 +61,34 @@ const ChatSidebar = ({ isSidebarOpen }) => {
 
 
     const dispatch = useDispatch();
-    const handleSignOut = () => {
-        dispatch(logout());
-        navigate("/login");
+    const navigate = useNavigate();
+
+    const handleSignOut = async () => {
+        if (isLoggingOut) return; // Prevent multiple clicks
+        
+        setIsLoggingOut(true);
+        try {
+            // Call backend logout API to blacklist tokens
+            await logoutUser();
+            // console.log("Successfully logged out from backend");
+            
+            // Clear local state
+            dispatch(logout());
+            
+            // Navigate to login page
+            navigate("/login");
+            
+            // toast.success("Logged out successfully");
+        } catch (error) {
+            console.error("Logout error:", error);
+            // Even if backend call fails, still clear local state for security
+            dispatch(logout());
+            navigate("/login");
+            toast.warning("Logged out locally (server logout may have failed)");
+        } finally {
+            setIsLoggingOut(false);
+        }
     };
-    const navigate = useNavigate()
     return (
         <div className={`flex flex-col transition-transform ease-in-out duration-400 ${isSidebarOpen ? "w-fit" : "w-0"}`}>
             <div className="mx-auto w-fit min-w-64">
@@ -183,9 +208,13 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                     <div className="fixed bottom-0 flex flex-col gap-y-4 mb-4">
                         <div className="w-64 h-10">
                             <div className="flex items-center px-4 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white group transition-all duration-200 bottom-2">
-                                <button className="cursor-pointer flex items-center px-4 py-4 text-sm font-medium text-white duration-200"
-                                    onClick={handleSignOut}>
-                                    <FiLogOut className="h-5 w-5 mr-3" />Sign out
+                                <button 
+                                    className={`cursor-pointer flex items-center px-4 py-4 text-sm font-medium text-white duration-200 ${isLoggingOut ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    onClick={handleSignOut}
+                                    disabled={isLoggingOut}
+                                >
+                                    <FiLogOut className="h-5 w-5 mr-3" />
+                                    {"Sign out"}
                                 </button>
                             </div>
                         </div>
