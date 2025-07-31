@@ -7,8 +7,13 @@ import "../App.css"
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../features/auth/authSlice";
+import React, { useState, useEffect } from "react";
+import SettingsModal from './Settings';
+
 const FileManagementSidebar = ({ isSidebarOpen, onOpenSettings, onOpenUpload }) => {
     const dispatch = useDispatch();
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
     const handleSignOut = () => {
         dispatch(logout());
         navigate("/login");
@@ -18,6 +23,9 @@ const FileManagementSidebar = ({ isSidebarOpen, onOpenSettings, onOpenUpload }) 
         <div className={`flex transition-transform ease-in-out duration-400 ${isSidebarOpen ? "w-fit" : "w-0"}`}>
             <div className="mx-auto w-fit min-w-64">
                 {/* Sidebar */}
+                {isSettingsOpen && (
+                    <SettingsModal onClose={() => setIsSettingsOpen(false)} />
+                )}
                 <aside className="fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-black text-white sm:translate-x-0">
                     {/* Search Bar */}
                     <div className="p-3 mt-4">
