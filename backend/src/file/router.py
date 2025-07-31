@@ -10,7 +10,7 @@ from fastapi import (
     WebSocketDisconnect,
     Query,
 )
-from concurrent.futures import (ProcessPoolExecutor, ThreadPoolExecutor)
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from fastapi.responses import FileResponse
 from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -37,6 +37,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)  # Create directory if it doesn't exist
 file_router = APIRouter()
 websocket_manager = WebSocketManager()
 
+
 @file_router.websocket("/ws/processing")
 async def websocket_endpoint(websocket: WebSocket, admin_id: str = Query(None)):
     # print("WebSocket client trying to connect...")
@@ -47,6 +48,7 @@ async def websocket_endpoint(websocket: WebSocket, admin_id: str = Query(None)):
             await websocket.receive_text()  # Keep connection alive
     except WebSocketDisconnect:
         websocket_manager.disconnect(websocket, admin_id)
+
 
 async def process_files_in_background(
     files_info_list: FileInfoList, admin_id: str, database_url: str, upload_id: str
@@ -74,9 +76,10 @@ async def process_files_in_background(
             {
                 "filename": item["filename"],
                 "status": item["status"],
-                "file_id": str(item["file_id"]) if "file_id" in item else None
+                "file_id": str(item["file_id"]) if "file_id" in item else None,
             }
-            for item in result if item["status"]
+            for item in result
+            if item["status"]
         ]
 
         end_time = time.time()
@@ -87,22 +90,24 @@ async def process_files_in_background(
 
         # Broadcast processing result via WebSocket
         # status_list = [item["status"] for item in result]
-        await websocket_manager.broadcast(admin_id, {
-            "event": "processing_complete",
-            "data": serialized_result,
-            "uploadId": upload_id
-        })
+        await websocket_manager.broadcast(
+            admin_id,
+            {
+                "event": "processing_complete",
+                "data": serialized_result,
+                "uploadId": upload_id,
+            },
+        )
 
         return result
 
     except Exception as e:
         print(f"Error in background file processing: {str(e)}")
         # Broadcast error via WebSocket
-        await websocket_manager.broadcast(admin_id, {
-            "event": "processing_error",
-            "error": str(e),
-            "uploadId": upload_id
-        })
+        await websocket_manager.broadcast(
+            admin_id,
+            {"event": "processing_error", "error": str(e), "uploadId": upload_id},
+        )
         return {"error": str(e)}
 
 
@@ -143,18 +148,25 @@ async def upload_files(
     upload_id = str(uuid.uuid4())
     # Thêm task vào background tasks để xử lý bất đồng bộ
     background_tasks.add_task(
-        process_files_in_background, files_info_list, admin_id, Config.DATABASE_URL, upload_id
+        process_files_in_background,
+        files_info_list,
+        admin_id,
+        Config.DATABASE_URL,
+        upload_id,
     )
 
     return {
         "message": "Files are being processed in the background. You will be notified upon completion.",
         "files": [{"filename": file.filename} for file in files],
-        "uploadID" : upload_id,
+        "uploadID": upload_id,
     }
 
 
 @file_router.get("/", response_model=List[FileSchemaWithAdmin])
-async def list_files(session: AsyncSession = Depends(get_session)):
+async def list_files(
+    session: AsyncSession = Depends(get_session),
+    admin_detail: dict = Depends(AccessTokenBearerAdmin),
+):
     """List all uploaded files."""
 
     statement = select(File).where(File.deleted == False).order_by(File.name)
@@ -168,7 +180,8 @@ async def list_files(session: AsyncSession = Depends(get_session)):
 
 @file_router.get("/{file_id}")
 async def download_file(
-    file_id: uuid.UUID, session: AsyncSession = Depends(get_session)
+    file_id: uuid.UUID, session: AsyncSession = Depends(get_session),
+    admin_detail: dict = Depends(AccessTokenBearerAdmin),
 ):
     """Download a file by its ID."""
 

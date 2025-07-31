@@ -130,10 +130,10 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                         {chats.map((chat) => (
                             <div
                                 key={chat.chat_id}
-                                className="cursor-pointer flex items-center justify-between px-4 top-3 py-2 hover:bg-gray-800 rounded group hover:bg-gray-400 w-full"
+                                className="cursor-pointer flex items-center justify-between px-4 top-3 py-2 hover:bg-gray-800 rounded group w-full"
                             >
                                 <button
-                                    className="cursor-pointer truncate max-w-[250px] whitespace-nowrap overflow-hidden text-sm group-hover:text-white font-medium text-left text-gray-400 w-full pr-8 custom-scrollbar"
+                                    className="cursor-pointer truncate max-w-[250px] whitespace-nowrap overflow-hidden text-sm group-hover:text-white font-medium text-left text-gray-400 w-full h-full pr-8 custom-scrollbar"
                                     onClick={() => navigate(`/chat/${chat.id}`)}
                                     title={chat.name || "Unnamed Chat"}
                                 >
