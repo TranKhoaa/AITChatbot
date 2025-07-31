@@ -18,13 +18,12 @@ function usePrevious(value) {
 }
 import ReactMarkdown from "react-markdown";
 
-const Chat = () => {
+const Chat = ({ setChats }) => {
   const [message, setMessage] = useState([]);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const { chat_id } = useParams();
   const previousChatId = usePrevious(chat_id);
-  const [chatId, setChatId] = useState(chat_id);
 
   const navigate = useNavigate();
   const token = useSelector((state) => state.auth.token); // Get token from Redux
@@ -34,7 +33,8 @@ const Chat = () => {
       const res = await axiosInstance.post("user/chat/create", {
         name: "New Chat",
       });
-      const newChatId = res.data.chat_id;
+      const newChatId = res.data.id;
+      setChats(prev => [res.data, ...prev]);
       navigate(`/chat/${newChatId}`);
       return newChatId;
     } catch (error) {

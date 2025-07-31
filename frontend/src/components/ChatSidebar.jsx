@@ -15,8 +15,7 @@ import SettingsModal from "./Settings";
 import "react-toastify/dist/ReactToastify.css";
 import { toast, ToastContainer } from "react-toastify";
 
-const ChatSidebar = ({ isSidebarOpen }) => {
-    const [chats, setChats] = useState([]);
+const ChatSidebar = ({ isSidebarOpen, chats, setChats }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [activeMenuChatId, setActiveMenuChatId] = useState(null);
@@ -129,7 +128,7 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                     <div className="flex-1 flex flex-col px-3 overflow-x-hidden overflow-y-auto custom-scrollbar">
                         {chats.map((chat) => (
                             <div
-                                key={chat.chat_id}
+                                key={chat.id}
                                 className="cursor-pointer flex items-center justify-between px-4 top-3 py-2 hover:bg-gray-800 rounded group hover:bg-gray-400 w-full"
                             >
                                 <button
