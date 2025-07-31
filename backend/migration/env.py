@@ -12,6 +12,7 @@ from src.chat_history.model import Chat_history
 from src.admin.model import Admin
 from src.file.model import File
 from src.chunk.model import Chunk
+from src.token_blacklist.model import TokenBlacklist
 from sqlmodel import SQLModel
 from src.config import Config
 

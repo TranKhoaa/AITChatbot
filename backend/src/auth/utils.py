@@ -104,3 +104,27 @@ def decode_token(token: str, type: Token_type = "access") -> dict:
     except jwt.PyJWTError as e:
         logging.exception(e)
         return None
+
+def extract_jti_from_token(token: str, type: Token_type = "access") -> str:
+    """Extract JTI (JWT ID) from token without full validation"""
+    try:
+        if type == "access":
+            # Decode without verification to extract JTI
+            unverified_payload = jwt.decode(
+                jwt=token,
+                key=Config.JWT_SECRET_KEY,
+                algorithms=[Config.JWT_ALGORITHM],
+                options={"verify_signature": True, "verify_exp": False}
+            )
+        else:
+            unverified_payload = jwt.decode(
+                jwt=token,
+                key=Config.JWT_SECRET_KEY_REFRESH,
+                algorithms=[Config.JWT_ALGORITHM],
+                options={"verify_signature": True, "verify_exp": False}
+            )
+        
+        return unverified_payload.get("jti")
+    except jwt.PyJWTError as e:
+        logging.exception(f"Error extracting JTI from token: {e}")
+        return None
