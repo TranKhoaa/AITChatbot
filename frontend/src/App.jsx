@@ -3,9 +3,7 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import AdminPage from "./pages/adminPage";
-import Chat from "./pages/Chat";
-import ChatSidebar from "./components/ChatSidebar";
-import ChatHeader from "./components/ChatHeader";
+import ChatPage from "./pages/chatPage";
 import Settings from "./components/Settings";
 import { useState, useEffect, useRef } from "react";
 import { ToastContainer } from "react-toastify";
@@ -138,13 +136,7 @@ const dispatch = useDispatch();
             path="/chat"
             element={
               <PrivateRoute>
-                <div className="flex flex-col h-screen w-screen">
-                  <ChatHeader toggleSidebar={toggleSidebar} />
-                  <main className="flex flex-1 bg-black min-h-0">
-                    <ChatSidebar isSidebarOpen={isSidebarOpen} />
-                    <Chat />
-                  </main>
-                </div>
+                <ChatPage />
               </PrivateRoute>
             }
           />
@@ -152,13 +144,7 @@ const dispatch = useDispatch();
             path="/chat/:chat_id"
             element={
               <PrivateRoute>
-                <div className="flex flex-col h-screen w-screen">
-                  <ChatHeader toggleSidebar={toggleSidebar} />
-                  <main className="flex flex-1 bg-black min-h-0">
-                    <ChatSidebar isSidebarOpen={isSidebarOpen} />
-                    <Chat />
-                  </main>
-                </div>
+                <ChatPage />
               </PrivateRoute>
             }
           />

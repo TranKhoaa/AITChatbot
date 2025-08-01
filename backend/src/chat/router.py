@@ -59,12 +59,17 @@ async def create_chat(
         session.add(chat)
         await session.commit()
         await session.refresh(chat)
-        return {"chat_id": chat.id, "name": chat.name}
+        return {
+            "id": chat.id,
+            "name": chat.name,
+            "created_at": chat.created_at,
+            "updated_at": chat.updated_at,
+        }
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to create chat: {str(e)}")
 
-        
+
 @chat_router.post("/ask", status_code=status.HTTP_200_OK)
 async def ask_question(
     request: QuestionSchema,
@@ -245,6 +250,7 @@ async def delete_chat(
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to delete chat: {str(e)}")
+
 
 @chat_router.put("/")
 async def rename_chat(

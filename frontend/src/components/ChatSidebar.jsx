@@ -7,6 +7,7 @@ import "../App.css";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logout } from "../features/auth/authSlice";
+import { logoutUser } from "../features/auth/authAPI";
 import axiosInstance from "../api/axiosInstance";
 import React, { useState, useEffect } from "react";
 import NewChatModal from "./NewChatModal";
@@ -15,13 +16,13 @@ import SettingsModal from "./Settings";
 import "react-toastify/dist/ReactToastify.css";
 import { toast, ToastContainer } from "react-toastify";
 
-const ChatSidebar = ({ isSidebarOpen }) => {
-    const [chats, setChats] = useState([]);
+const ChatSidebar = ({ isSidebarOpen, chats, setChats }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [activeMenuChatId, setActiveMenuChatId] = useState(null);
     const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
     const [chatToRename, setChatToRename] = useState(null); // lưu thông tin chat đang rename
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const fetchChats = async () => {
         try {
@@ -60,11 +61,34 @@ const ChatSidebar = ({ isSidebarOpen }) => {
     };
 
     const dispatch = useDispatch();
-    const handleSignOut = () => {
-        dispatch(logout());
-        navigate("/login");
-    };
     const navigate = useNavigate();
+
+    const handleSignOut = async () => {
+        if (isLoggingOut) return; // Prevent multiple clicks
+        
+        setIsLoggingOut(true);
+        try {
+            // Call backend logout API to blacklist tokens
+            await logoutUser();
+            // console.log("Successfully logged out from backend");
+            
+            // Clear local state
+            dispatch(logout());
+            
+            // Navigate to login page
+            navigate("/login");
+            
+            // toast.success("Logged out successfully");
+        } catch (error) {
+            console.error("Logout error:", error);
+            // Even if backend call fails, still clear local state for security
+            dispatch(logout());
+            navigate("/login");
+            toast.warning("Logged out locally (server logout may have failed)");
+        } finally {
+            setIsLoggingOut(false);
+        }
+    };
     return (
         <div
             className={`h-full transition-transform ease-in-out duration-400 ${isSidebarOpen ? "w-fit" : "w-0"
@@ -129,8 +153,8 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                     <div className="flex-1 flex flex-col px-3 overflow-x-hidden overflow-y-auto custom-scrollbar">
                         {chats.map((chat) => (
                             <div
-                                key={chat.chat_id}
-                                className="cursor-pointer flex items-center justify-between px-4 top-3 py-2 hover:bg-gray-800 rounded group w-full"
+                                key={chat.id}
+                                className="cursor-pointer flex items-center justify-between px-4 top-3 py-2 hover:bg-gray-800 rounded group hover:bg-gray-400 w-full"
                             >
                                 <button
                                     className="cursor-pointer truncate max-w-[250px] whitespace-nowrap overflow-hidden text-sm group-hover:text-white font-medium text-left text-gray-400 w-full h-full pr-8 custom-scrollbar"
@@ -183,6 +207,7 @@ const ChatSidebar = ({ isSidebarOpen }) => {
                     <div className="flex flex-col gap-y-4 mb-4">
                         <div className="w-64 h-10">
                             <div className="flex items-center px-4 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white group transition-all duration-200 bottom-2">
+
                                 <button
                                     className="cursor-pointer flex items-center px-4 py-4 w-full text-sm font-medium text-white duration-200"
                                     onClick={handleSignOut}

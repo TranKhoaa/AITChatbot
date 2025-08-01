@@ -18,30 +18,23 @@ function usePrevious(value) {
 }
 import ReactMarkdown from "react-markdown";
 
-const Chat = () => {
+const Chat = ({ setChats }) => {
   const [message, setMessage] = useState([]);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const { chat_id } = useParams();
   const previousChatId = usePrevious(chat_id);
-  const [chatId, setChatId] = useState(chat_id);
-  const messagesEndRef = useRef(null);
+
   const navigate = useNavigate();
   const token = useSelector((state) => state.auth.token); // Get token from Redux
-
-    const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   const createNewChat = async () => {
     try {
       const res = await axiosInstance.post("user/chat/create", {
         name: "New Chat",
       });
-      const newChatId = res.data.chat_id;
+      const newChatId = res.data.id;
+      setChats(prev => [res.data, ...prev]);
       navigate(`/chat/${newChatId}`);
       return newChatId;
     } catch (error) {
@@ -71,20 +64,19 @@ const Chat = () => {
   const AI_MODELS = [
     { id: "qwen2:0.5b", name: "Qwen2 (0.5b)" },
     { id: "qwen3:0.6b", name: "Qwen3 (0.6b)" },
-    { id: "qwen3", name: "Qwen3" },
+    { id: "qwen3:8b", name: "Qwen3 (8b)" },
     { id: "deepseek-r1", name: "Deepseek R1" },
     { id: "mistral", name: "Mistral" },
   ];
   const AI_MODELS_MAP = {
     "qwen2:0.5b": "Qwen2 (0.5b)",
     "qwen3:0.6b": "Qwen3 (0.6b)",
-    "qwen3": "Qwen3",
+    "qwen3:8b": "Qwen3 (8b)",
     "deepseek-r1": "Deepseek R1",
     mistral: "Mistral",
   };
 
-
-  const [selectedModel, setSelectedModel] = useState("qwen2:0.5b");
+  const [selectedModel, setSelectedModel] = useState("null");
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const currentModelData =
     AI_MODELS.find((model) => model.id === selectedModel) || AI_MODELS[0];
@@ -282,8 +274,6 @@ const Chat = () => {
                     )}
                   </div>
                 ))}
-                {/* Scroll anchor */}
-                <div ref={messagesEndRef} />
               </div>
             </div>
           </div>

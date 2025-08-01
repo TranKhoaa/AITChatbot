@@ -2,7 +2,10 @@ from typing import Optional
 from fastapi import Request, Depends, Cookie
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi import HTTPException
+from sqlmodel.ext.asyncio.session import AsyncSession
 from .utils import decode_token
+from src.db.main import get_session
+from src.token_blacklist.service import TokenBlacklistService
 
 
 class TokenBearer(HTTPBearer):
@@ -11,7 +14,7 @@ class TokenBearer(HTTPBearer):
         self.type = type
 
     async def __call__(
-        self, request: Request
+        self, request: Request, session: AsyncSession = Depends(get_session)
     ) -> Optional[HTTPAuthorizationCredentials]:
         creds = await super().__call__(request)
 
@@ -31,6 +34,17 @@ class TokenBearer(HTTPBearer):
                     detail="Invalid authentication credentials",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
+            
+            # Check if token is blacklisted
+            blacklist_service = TokenBlacklistService()
+            jti = payload.get("jti")
+            if jti and await blacklist_service.is_token_blacklisted(jti, session):
+                raise HTTPException(
+                    status_code=401,
+                    detail="Token has been revoked",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+                
         except Exception as e:
             raise HTTPException(
                 status_code=401,
@@ -51,8 +65,9 @@ def AccessTokenBearerUser(payload: dict = Depends(TokenBearer(type="access"))):
     return payload
 
 
-def RefreshTokenBearerUser(
-    refresh_token: Optional[str] = Cookie(None, alias="refresh_token")
+async def RefreshTokenBearerUser(
+    refresh_token: Optional[str] = Cookie(None, alias="refresh_token"),
+    session: AsyncSession = Depends(get_session)
 ):
     """
     Dependency to get refresh token from httpOnly cookie for user
@@ -80,6 +95,16 @@ def RefreshTokenBearerUser(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
+        # Check if token is blacklisted
+        blacklist_service = TokenBlacklistService()
+        jti = payload.get("jti")
+        if jti and await blacklist_service.is_token_blacklisted(jti, session):
+            raise HTTPException(
+                status_code=401,
+                detail="Refresh token has been revoked",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
         return payload
     except Exception as e:
         raise HTTPException(
@@ -99,8 +124,9 @@ def AccessTokenBearerAdmin(payload: dict = Depends(TokenBearer(type="access"))):
     return payload
 
 
-def RefreshTokenBearerAdmin(
-    refresh_token: Optional[str] = Cookie(None, alias="refresh_token")
+async def RefreshTokenBearerAdmin(
+    refresh_token: Optional[str] = Cookie(None, alias="refresh_token"),
+    session: AsyncSession = Depends(get_session)
 ):
     """
     Dependency to get refresh token from httpOnly cookie for admin
@@ -125,6 +151,16 @@ def RefreshTokenBearerAdmin(
             raise HTTPException(
                 status_code=403,
                 detail="Invalid refresh token for admin",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        # Check if token is blacklisted
+        blacklist_service = TokenBlacklistService()
+        jti = payload.get("jti")
+        if jti and await blacklist_service.is_token_blacklisted(jti, session):
+            raise HTTPException(
+                status_code=401,
+                detail="Refresh token has been revoked",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
