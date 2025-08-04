@@ -46,6 +46,56 @@ class VectorSearch:
         result = await self.session.exec(query)
         return result.all()
     
+    async def similarity_search_tiered(
+        self,
+        query_vector: List[float],
+        high_threshold: float = 0.7,
+        medium_threshold: float = 0.5,
+        max_medium_results: int = 5,
+        file_ids: Optional[List[str]] = None
+    ) -> List[Chunk]:
+        """
+        Tiered similarity search for RAG systems:
+        - Returns ALL chunks with similarity > high_threshold 
+        - Returns at most max_medium_results chunks with similarity between medium_threshold and high_threshold
+        
+        Args:
+            query_vector: The embedding vector to search for
+            high_threshold: Minimum similarity for high-priority chunks (default 0.7)
+            medium_threshold: Minimum similarity for medium-priority chunks (default 0.5)
+            max_medium_results: Maximum number of medium-priority chunks to return
+            file_ids: Optional list of file IDs to restrict search to
+        """
+        # Get high similarity chunks (all of them)
+        high_distance_threshold = 1 - high_threshold
+        high_query = select(Chunk).where(
+            Chunk.vector.cosine_distance(query_vector) <= high_distance_threshold
+        ).order_by(Chunk.vector.cosine_distance(query_vector))
+        
+        if file_ids:
+            high_query = high_query.where(Chunk.file_id.in_(file_ids))
+        
+        high_result = await self.session.exec(high_query)
+        high_similarity_chunks = high_result.all()
+        
+        # Get medium similarity chunks (limited number)
+        medium_distance_threshold = 1 - medium_threshold
+        high_distance_threshold = 1 - high_threshold
+        
+        medium_query = select(Chunk).where(
+            Chunk.vector.cosine_distance(query_vector) <= medium_distance_threshold,
+            Chunk.vector.cosine_distance(query_vector) > high_distance_threshold
+        ).order_by(Chunk.vector.cosine_distance(query_vector)).limit(max_medium_results)
+        
+        if file_ids:
+            medium_query = medium_query.where(Chunk.file_id.in_(file_ids))
+        
+        medium_result = await self.session.exec(medium_query)
+        medium_similarity_chunks = medium_result.all()
+        
+        # Combine and return
+        return high_similarity_chunks + medium_similarity_chunks
+    
     async def similarity_search_l2(
         self, 
         query_vector: List[float], 

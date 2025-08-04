@@ -111,13 +111,16 @@ async def ask_question(
                 status_code=400, detail=f"Failed to embed question: {str(e)}"
             )
 
-        # Perform vector search for top 3 chunks
+        # Perform tiered vector search
         vector_search = VectorSearch(session)
         await vector_search.optimize_search_parameters()  # Optimize for HNSW index
-        similar_chunks = await vector_search.similarity_search_cosine(
+        
+        # Use tiered search: all chunks with >0.7 similarity + up to 5 chunks with 0.5-0.7 similarity
+        similar_chunks = await vector_search.similarity_search_tiered(
             query_vector=query_vector,
-            limit=3,
-            similarity_threshold=0.3,  # Only chunks with >30% similarity
+            high_threshold=0.7,     # All chunks with >70% similarity
+            medium_threshold=0.5,   # Up to 5 chunks with 50-70% similarity
+            max_medium_results=5
         )
 
         # Prepare context from chunks
