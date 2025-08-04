@@ -9,7 +9,7 @@ import { useDispatch } from "react-redux";
 import { logout } from "../features/auth/authSlice";
 import { logoutUser } from "../features/auth/authAPI";
 import { useState } from "react";
-
+import SettingsModal from "./Settings";
 const FileManagementSidebar = ({ isSidebarOpen, onOpenSettings, onOpenUpload }) => {
     const dispatch = useDispatch();
     const navigate = useNavigate();

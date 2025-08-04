@@ -67,7 +67,7 @@ function LoginPage() {
       } else {
         setLoginError("An unexpected error occurred. Please try again.");
       }
-      dispatch(setError({ message: err.message, status: err.status }));
+      // dispatch(setError({ message: err.message, status: err.status }));
     }
   };
   return (

@@ -71,21 +71,21 @@ const Chat = ({ setChats }) => {
   }, [chat_id]);
 
   const AI_MODELS = [
-    { id: "qwen2:0.5b", name: "Qwen2 (0.5b)" },
+    // { id: "qwen2:0.5b", name: "Qwen2 (0.5b)" },
     { id: "qwen3:0.6b", name: "Qwen3 (0.6b)" },
-    { id: "qwen3", name: "Qwen3 (latest)" },
-    { id: "deepseek-r1", name: "Deepseek R1" },
-    { id: "mistral", name: "Mistral" },
+    { id: "qwen3:latest", name: "Qwen3 (latest)" },
+    { id: "deepseek-r1:latest", name: "Deepseek R1" },
+    // { id: "mistral", name: "Mistral" },
   ];
   const AI_MODELS_MAP = {
-    "qwen2:0.5b": "Qwen2 (0.5b)",
+    // "qwen2:0.5b": "Qwen2 (0.5b)",
     "qwen3:0.6b": "Qwen3 (0.6b)",
-    "qwen3": "Qwen3 (latest)",
-    "deepseek-r1": "Deepseek R1",
-    mistral: "Mistral",
+    "qwen3:latest": "Qwen3 (latest)",
+    "deepseek-r1:latest": "Deepseek R1",
+    // mistral: "Mistral",
   };
 
-  const [selectedModel, setSelectedModel] = useState("qwen2:0.5b");
+  const [selectedModel, setSelectedModel] = useState("qwen3:0.6b");
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const currentModelData =
     AI_MODELS.find((model) => model.id === selectedModel) || AI_MODELS[0];
@@ -123,7 +123,7 @@ const Chat = ({ setChats }) => {
       id: `loading-${Date.now()}`, // Unique loading ID
       source: "bot",
       content: "Responding...",
-      model_id: selectedModel || "qwen2:0.5b",
+      model_id: selectedModel || "qwen3:0.6b",
     };
 
     setMessages((prev) => [...prev, userMessage, loadingMessage]);
@@ -132,7 +132,7 @@ const Chat = ({ setChats }) => {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/api/v1/user/chat/ask",
+        "/api/v1/user/chat/ask",
         {
           method: "POST",
           headers: {
@@ -142,7 +142,7 @@ const Chat = ({ setChats }) => {
           body: JSON.stringify({
             chat_id: newChatId,
             question: currentMessage,
-            model_id: selectedModel || "qwen2:0.5b",
+            model_id: selectedModel || "qwen3:0.6b",
           }),
         }
       );
