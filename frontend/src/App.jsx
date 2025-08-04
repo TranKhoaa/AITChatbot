@@ -21,7 +21,7 @@ const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { user, token } = useSelector((state) => state.auth);
   const wsRef = useRef(null);
-const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -38,24 +38,28 @@ const dispatch = useDispatch();
 
       ws.onmessage = (event) => {
         const message = JSON.parse(event.data);
-        const toastId = localStorage.getItem("uploadToastId");
+        const uploadID = message.uploadId;
+
+        const toastMap = JSON.parse(localStorage.getItem("uploadToastMap") || "{}");
+        const toastId = toastMap[uploadID];
 
         if (message.event === "processing_complete") {
           dispatch(fetchFiles());
+
           if (toastId) {
             toast.update(toastId, {
-              render: "Files has been processed successfully.",
+              render: "Files have been processed successfully.",
               type: "success",
               isLoading: false,
               autoClose: 3000,
               closeOnClick: true,
             });
-            localStorage.removeItem("uploadToastId");
+            // Remove from map
+            delete toastMap[uploadID];
+            localStorage.setItem("uploadToastMap", JSON.stringify(toastMap));
           } else {
-            toast.success("File has been processed successfully.");
+            toast.success("Files have been processed successfully.");
           }
-
-          console.log("Processing result:", message.data);
 
         } else if (message.event === "processing_error") {
           if (toastId) {
@@ -66,15 +70,13 @@ const dispatch = useDispatch();
               autoClose: 5000,
               closeOnClick: true,
             });
-            localStorage.removeItem("uploadToastId");
+            delete toastMap[uploadID];
+            localStorage.setItem("uploadToastMap", JSON.stringify(toastMap));
           } else {
             toast.error(`Processing error: ${message.error}`);
           }
-
-          console.error("Processing error:", message.error);
         }
       };
-
 
       ws.onerror = (error) => {
         console.warn("WebSocket error:", error);

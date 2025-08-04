@@ -153,9 +153,13 @@ export default function UploadFile({ onClose }) {
       });
 
       if ([200, 201, 202].includes(res.status)) {
-        // Show loading toast
         const id = toast.loading("Processing...");
-        localStorage.setItem("uploadToastId", id);
+        const uploadID = res.data.uploadID; // từ response
+
+        let toastMap = JSON.parse(localStorage.getItem("uploadToastMap") || "{}");
+        toastMap[uploadID] = id;
+        localStorage.setItem("uploadToastMap", JSON.stringify(toastMap));
+
         onClose();
       } else {
         toast.error("Upload failed.");
