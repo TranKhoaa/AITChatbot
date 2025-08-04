@@ -123,7 +123,7 @@ const Chat = ({ setChats }) => {
       id: `loading-${Date.now()}`, // Unique loading ID
       source: "bot",
       content: "Responding...",
-      model_id: selectedModel || "qwen2:0.5b",
+      model_id: selectedModel || "qwen3:0.6b",
     };
 
     setMessages((prev) => [...prev, userMessage, loadingMessage]);
@@ -142,7 +142,7 @@ const Chat = ({ setChats }) => {
           body: JSON.stringify({
             chat_id: newChatId,
             question: currentMessage,
-            model_id: selectedModel || "qwen2:0.5b",
+            model_id: selectedModel || "qwen3:0.6b",
           }),
         }
       );

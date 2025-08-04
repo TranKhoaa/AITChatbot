@@ -1,4 +1,4 @@
-import { useState, React } from "react";
+import { useState, useEffect, React } from "react";
 
 import Header from "../components/Header";
 import illustration from "../assets/illustration.svg";
@@ -62,14 +62,20 @@ function LoginPage() {
       );
     navigate(response.role === "admin" ? "/admin" : "/chat");
     } catch (err) {
+      // console.log("Login error: ", err);
       if (err.status === 401) {
+        console.log("Login error status: ", err.status);
         setLoginError("Your username or password is incorrect.");
       } else {
         setLoginError("An unexpected error occurred. Please try again.");
       }
-      dispatch(setError({ message: err.message, status: err.status }));
+      // dispatch(setError({ message: err.message, status: err.status }));
     }
   };
+  useEffect(() => {
+  console.log("loginError changed: ", loginError);
+}, [loginError]);
+
   return (
     <AuthLayout>
       <div className="bg-white text-black p-5  xl:px-20 xl:py-20 w-full xl:w-[45%] flex flex-col justify-around rounded-2xl space-y-3 xl:space-y-5">
