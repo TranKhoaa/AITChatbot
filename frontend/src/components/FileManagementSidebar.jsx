@@ -14,22 +14,24 @@ const FileManagementSidebar = ({ isSidebarOpen, onOpenSettings, onOpenUpload }) 
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
 
     const handleSignOut = async () => {
         if (isLoggingOut) return; // Prevent multiple clicks
-        
+
         setIsLoggingOut(true);
         try {
             // Call backend logout API to blacklist tokens
             await logoutUser();
             console.log("Successfully logged out from backend");
-            
+
             // Clear local state
             dispatch(logout());
-            
+
             // Navigate to login page
             navigate("/login");
-            
+
             // toast.success("Logged out successfully");
         } catch (error) {
             console.error("Logout error:", error);
@@ -78,7 +80,7 @@ const FileManagementSidebar = ({ isSidebarOpen, onOpenSettings, onOpenUpload }) 
                     <div className="fixed bottom-0 flex flex-col gap-y-4 mb-4">
                         <div className="w-64 h-10">
                             <div className="flex items-center px-4 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white group transition-all duration-200 bottom-2">
-                                <button 
+                                <button
                                     className={`cursor-pointer flex items-center px-4 py-4 text-sm font-medium text-white duration-200 ${isLoggingOut ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     onClick={handleSignOut}
                                     disabled={isLoggingOut}

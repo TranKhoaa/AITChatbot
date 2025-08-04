@@ -12,8 +12,8 @@ const NewChatModal = ({ onClose, setChats }) => {
       const res = await axiosInstance.post("user/chat/create", { name });
       if (res.status === 200 || res.status === 201) {
         const newChat = res.data;
-        setChats((prev) => [{ id: newChat.chat_id, name: newChat.name }, ...prev]);
-        navigate(`/chat/${newChat.chat_id}`);
+        setChats((prev) => [{ id: newChat.id, name: newChat.name }, ...prev]);
+        navigate(`/chat/${newChat.id}`);
         onClose();
       }
     } catch (err) {

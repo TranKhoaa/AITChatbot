@@ -24,9 +24,18 @@ const Chat = ({ setChats }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { chat_id } = useParams();
   const previousChatId = usePrevious(chat_id);
+  const messagesEndRef = useRef(null);
 
   const navigate = useNavigate();
   const token = useSelector((state) => state.auth.token); // Get token from Redux
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
 
   const createNewChat = async () => {
     try {
@@ -64,19 +73,19 @@ const Chat = ({ setChats }) => {
   const AI_MODELS = [
     { id: "qwen2:0.5b", name: "Qwen2 (0.5b)" },
     { id: "qwen3:0.6b", name: "Qwen3 (0.6b)" },
-    { id: "qwen3:8b", name: "Qwen3 (8b)" },
+    { id: "qwen3", name: "Qwen3 (latest)" },
     { id: "deepseek-r1", name: "Deepseek R1" },
     { id: "mistral", name: "Mistral" },
   ];
   const AI_MODELS_MAP = {
     "qwen2:0.5b": "Qwen2 (0.5b)",
     "qwen3:0.6b": "Qwen3 (0.6b)",
-    "qwen3:8b": "Qwen3 (8b)",
+    "qwen3": "Qwen3 (latest)",
     "deepseek-r1": "Deepseek R1",
     mistral: "Mistral",
   };
 
-  const [selectedModel, setSelectedModel] = useState("null");
+  const [selectedModel, setSelectedModel] = useState("qwen2:0.5b");
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const currentModelData =
     AI_MODELS.find((model) => model.id === selectedModel) || AI_MODELS[0];
@@ -114,7 +123,7 @@ const Chat = ({ setChats }) => {
       id: `loading-${Date.now()}`, // Unique loading ID
       source: "bot",
       content: "Responding...",
-      model_id: selectedModel || "qwen3 (0.6b)",
+      model_id: selectedModel || "qwen2:0.5b",
     };
 
     setMessages((prev) => [...prev, userMessage, loadingMessage]);
@@ -133,7 +142,7 @@ const Chat = ({ setChats }) => {
           body: JSON.stringify({
             chat_id: newChatId,
             question: currentMessage,
-            model_id: selectedModel || "qwen3 (0.6b)",
+            model_id: selectedModel || "qwen2:0.5b",
           }),
         }
       );
@@ -274,6 +283,8 @@ const Chat = ({ setChats }) => {
                     )}
                   </div>
                 ))}
+                {/* Scroll anchor */}
+                <div ref={messagesEndRef} />
               </div>
             </div>
           </div>
