@@ -17,13 +17,13 @@ const getFileExtension = (filename) => {
 };
 
 // Calculate file hash (simple implementation)
-const calculateFileHash = async (file) => {
-  const buffer = await file.arrayBuffer();
-  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
-};
+// const calculateFileHash = async (file) => {
+//   const buffer = await file.arrayBuffer();
+//   const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+//   const hashArray = Array.from(new Uint8Array(hashBuffer));
+//   const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+//   return hashHex;
+// };
 
 export const fileHandler = {
   // Process selected files and store them
@@ -33,7 +33,7 @@ export const fileHandler = {
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "application/msword",
-      "application/vnd.ms-excel"
+      "application/vnd.ms-excel",
     ];
 
     try {
@@ -50,7 +50,7 @@ export const fileHandler = {
         }
 
         const fileId = generateFileId();
-        const hash = await calculateFileHash(file);
+        // const hash = await calculateFileHash(file);
         
         // Create file metadata
         const fileMetadata = {
@@ -61,7 +61,7 @@ export const fileHandler = {
           size: file.size,
           lastModified: file.lastModified,
           status: 'pending',
-          hash: hash,
+          hash: null,
           uploadedAt: null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),

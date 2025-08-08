@@ -38,7 +38,7 @@ class IndexedDBManager {
         const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
         store.createIndex('name', 'name', { unique: false });
         store.createIndex('type', 'type', { unique: false });
-        store.createIndex('hash', 'hash', { unique: false });
+        // store.createIndex('hash', 'hash', { unique: false });
         store.createIndex('status', 'status', { unique: false });
       };
     });
