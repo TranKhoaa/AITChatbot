@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:8000/api/v1/",
+  baseURL: "/api/v1/",
   withCredentials: true, // Gửi cookie (refresh_token) sang backend
 });
 
@@ -30,9 +30,9 @@ axiosInstance.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      isLoggedIn &&
-      !originalRequest.url.includes("/auth/login") &&
-      !originalRequest.url.includes("/auth/refresh")
+      !originalRequest.url.includes("auth/login")  &&
+      !originalRequest.url.includes("auth/refresh")
+
     ) {
       originalRequest._retry = true;
       

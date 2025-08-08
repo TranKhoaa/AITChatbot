@@ -12,6 +12,7 @@ import { useState } from "react";
 import SettingsModal from "./Settings";
 
 const FileManagementSidebar = ({ isSidebarOpen, onOpenSettings, onUploadFiles, onUploadFolders }) => {
+
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [isLoggingOut, setIsLoggingOut] = useState(false);

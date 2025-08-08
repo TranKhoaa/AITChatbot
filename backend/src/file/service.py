@@ -131,7 +131,7 @@ def process_files(
                             file_id=file_metadata.id,
                         )
                         session.add(chunk)
-                        await session.commit()
+                    await session.commit()
 
                     return {
                         "filename": filename,
