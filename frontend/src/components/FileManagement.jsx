@@ -12,9 +12,25 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchFiles } from "../features/filesSlice";
 
 function FileManagement() {
-  const getIconByType = (type) => {
-    if (!type || typeof type !== "string") return "";
-    switch (type.toLowerCase()) {
+  const getIconByType = (type, fileExtension = '') => {
+    if (!type && !fileExtension) return "";
+    
+    // Use fileExtension if available, otherwise try to extract from type
+    let ext = fileExtension;
+    if (!ext && typeof type === "string") {
+      // Handle MIME types
+      if (type.includes('wordprocessingml') || type.includes('msword')) {
+        ext = '.docx';
+      } else if (type.includes('spreadsheetml') || type.includes('ms-excel')) {
+        ext = '.xlsx';
+      } else if (type.includes('pdf')) {
+        ext = '.pdf';
+      } else if (type.startsWith('.')) {
+        ext = type;
+      }
+    }
+    
+    switch (ext?.toLowerCase()) {
       case ".docx":
       case ".doc": return wordIcon;
       case ".xls":
@@ -231,13 +247,13 @@ function FileManagement() {
                 >
                   <td className="py-2 flex items-center gap-2">
                     <img
-                      src={getIconByType(file.type)}
+                      src={getIconByType(file.type, file.fileExtension)}
                       alt="icon"
                       className="w-5 h-5"
                     />
                     {file.name}
                   </td>
-                  <td className="pr-2">{file.type}</td>
+                  <td className="pr-2">{file.fileExtension || file.type}</td>
                   <td className="pr-2">{formatDate(file.created_at)}</td>
                   <td className="pr-2">{formatDate(file.updated_at)}</td>
                   <td className="pr-2">{file.admin.name}</td>
