@@ -24,22 +24,21 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const state = store.getState();
+    const isLoggedIn = state.auth.token && state.auth.role; // Check if user is actually logged in
 
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !(originalRequest.url.includes("auth/login"))
+      !originalRequest.url.includes("auth/login")  &&
+      !originalRequest.url.includes("auth/refresh")
 
     ) {
       originalRequest._retry = true;
-
+      
       try {
-        const state = store.getState();
         const role = state.auth.role;
-        const refreshUrl =
-          role === "admin"
-            ? "auth/refresh/admin"
-            : "auth/refresh/user";
+        const refreshUrl = role === "admin" ? "auth/refresh/admin" : "auth/refresh/user";
 
         // Gọi backend để lấy access_token mới bằng cookie
         const res = await axiosInstance.get(refreshUrl);

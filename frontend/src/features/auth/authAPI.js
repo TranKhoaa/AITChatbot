@@ -11,13 +11,22 @@ export const signupAdmin = async (credentials) => {
 };
 
 export const loginUser = async (credentials) => {
-  const res = await axiosInstance.post("auth/login/user", credentials);
-  return res.data;
+  try {
+    const res = await axiosInstance.post("auth/login/user", credentials);
+    return res.data;
+  } catch (error) {
+    // console.log("Login error in auth: ", error);
+    throw error;
+  }
 };
 
 export const loginAdmin = async (credentials) => {
-  const res = await axiosInstance.post("auth/login/admin", credentials);
-  return res.data;
+  try {
+    const res = await axiosInstance.post("auth/login/admin", credentials);
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
 };
 
 export const logoutUser = async () => {
