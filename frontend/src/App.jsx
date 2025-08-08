@@ -1,6 +1,26 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
+// import SignUpPage from "./pages/SignUpPage";
+// import AdminPage from "./pages/adminPage";
+// import ChatPage from "./pages/chatPage";
+// import Settings from "./components/Settings";
+// import { useState, useEffect, useRef } from "react";
+// import { ToastContainer } from "react-toastify";
+// import { Provider, useSelector, useDispatch } from "react-redux";
+// import store from "./app/store";
+// import UnauthorizedPage from "./pages/UnauthorizedPage";
+// import AdminRoute from "./routes/AdminRoute";
+// import PrivateRoute from "./routes/PrivateRoute";
+// import NewChatModal from "./components/NewChatModal";
+// import { Navigate } from "react-router-dom";
+// import { toast } from "react-toastify";
+// import { fetchFiles } from "./features/filesSlice";
+// import { initializeStorage } from "./utils/storageInit";
+import { fileHandler } from "./utils/fileHandler";
+
+// Make fileHandler available globally for WebSocket handlers
+window.fileHandler = fileHandler;
 import SignUpPage from "./pages/SignUpPage";
 import AdminPage from "./pages/adminPage";
 import ChatPage from "./pages/chatPage";
@@ -16,9 +36,11 @@ import NewChatModal from "./components/NewChatModal";
 import { Navigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { fetchFiles } from "./features/filesSlice";
+import { initializeStorage } from "./utils/storageInit";
 
 const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [storageInitialized, setStorageInitialized] = useState(false);
   const { user, token } = useSelector((state) => state.auth);
   const wsRef = useRef(null);
   const dispatch = useDispatch();
@@ -26,6 +48,24 @@ const App = () => {
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+
+  // Initialize storage systems
+  useEffect(() => {
+    const initStorage = async () => {
+      try {
+        const success = await initializeStorage();
+        setStorageInitialized(success);
+        if (!success) {
+          console.warn('Storage initialization failed, some features may not work properly');
+        }
+      } catch (error) {
+        console.error('Critical error during storage initialization:', error);
+        setStorageInitialized(false);
+      }
+    };
+
+    initStorage();
+  }, []);
 
   useEffect(() => {
     if (user?.role === "admin" && token) {
@@ -44,7 +84,25 @@ const App = () => {
         const toastId = toastMap[uploadID];
 
         if (message.event === "processing_complete") {
+          // First fetch updated server files
           dispatch(fetchFiles());
+
+          // Clean up local storage for files that are now trained on server
+          if (window.fileHandler) {
+            // Wait a bit for the server files to be fetched, then clean up local files
+            setTimeout(async () => {
+              const pendingFiles = await window.fileHandler.getPendingFiles();
+              const filesToRemove = pendingFiles
+                .filter(file => file.status === 'uploaded' && file.uploadID === uploadID)
+                .map(file => file.id);
+              
+              if (filesToRemove.length > 0) {
+                await window.fileHandler.removeFiles(filesToRemove);
+                // Trigger refresh in any open file management components
+                window.dispatchEvent(new CustomEvent('fileManagementRefresh'));
+              }
+            }, 1000); // Wait 1 second for server files to load
+          }
 
           if (toastId) {
             toast.update(toastId, {

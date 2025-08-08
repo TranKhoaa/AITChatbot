@@ -1,4 +1,4 @@
-import { FaPlus } from 'react-icons/fa6';
+import { FaPlus, FaFile, FaFolder } from 'react-icons/fa6';
 import { IoMdSettings } from 'react-icons/io';
 import { FiLogOut } from 'react-icons/fi';
 import { AiOutlineHistory, AiOutlineSearch } from 'react-icons/ai';
@@ -10,7 +10,9 @@ import { logout } from "../features/auth/authSlice";
 import { logoutUser } from "../features/auth/authAPI";
 import { useState } from "react";
 import SettingsModal from "./Settings";
-const FileManagementSidebar = ({ isSidebarOpen, onOpenSettings, onOpenUpload }) => {
+
+const FileManagementSidebar = ({ isSidebarOpen, onOpenSettings, onUploadFiles, onUploadFolders }) => {
+
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -64,18 +66,30 @@ const FileManagementSidebar = ({ isSidebarOpen, onOpenSettings, onOpenUpload }) 
                             </div>
                         </div>
                     </div>
-                    <nav className="mt-3 px-3">
-                        {/* Main Navigation */}
-                        <div className="space-y-4">
-                            {/* New chat */}
-                            <button
-                                onClick={onOpenUpload}
-                                className="cursor-pointer flex items-center px-4 py-2.5 text-sm font-medium rounded-lg bg-white text-black group transition-all duration-200 hover:bg-gray-400 w-full"
-                            >
-                                <FaPlus className="h-4 w-4 mr-3" />Upload files
-                            </button>
-                        </div>
-                    </nav>
+
+                    {/* File Upload Section */}
+                    <div className="p-3 space-y-3">
+                        <h3 className="text-sm font-medium text-gray-300 mb-3">Upload Files</h3>
+                        
+                        {/* Browse Files Button */}
+                        <button
+                            onClick={onUploadFiles}
+                            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 rounded-md"
+                        >
+                            <FaFile className="h-4 w-4" />
+                            Browse Files
+                        </button>
+
+                        {/* Browse Folders Button */}
+                        <button
+                            onClick={onUploadFolders}
+                            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-200 rounded-md"
+                        >
+                            <FaFolder className="h-4 w-4" />
+                            Browse Folders
+                        </button>
+                    </div>
+
                     {/* Sign out, Settings */}
                     <div className="fixed bottom-0 flex flex-col gap-y-4 mb-4">
                         <div className="w-64 h-10">
