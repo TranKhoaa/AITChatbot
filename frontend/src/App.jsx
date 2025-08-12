@@ -87,17 +87,14 @@ const App = () => {
           // First fetch updated server files
           dispatch(fetchFiles());
 
-          // Clean up local storage for files that are now trained on server
+          // Update local file status to 'trained' instead of removing them
           if (window.fileHandler) {
-            // Wait a bit for the server files to be fetched, then clean up local files
+            // Wait a bit for the server files to be fetched, then update local files status
             setTimeout(async () => {
-              const pendingFiles = await window.fileHandler.getPendingFiles();
-              const filesToRemove = pendingFiles
-                .filter(file => file.status === 'uploaded' && file.uploadID === uploadID)
-                .map(file => file.id);
+              const updatedCount = await window.fileHandler.updateFilesToTrained(uploadID);
               
-              if (filesToRemove.length > 0) {
-                await window.fileHandler.removeFiles(filesToRemove);
+              if (updatedCount > 0) {
+                // console.log(`Updated ${updatedCount} files to trained status`);
                 // Trigger refresh in any open file management components
                 window.dispatchEvent(new CustomEvent('fileManagementRefresh'));
               }

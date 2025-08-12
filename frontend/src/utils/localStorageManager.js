@@ -40,8 +40,8 @@ export const localStorageManager = {
         lastModified: file.lastModified,
         status: 'pending',
         hash:  file.hash || null,
-        uploadedAt: null,
-        updatedAt: new Date().toISOString(),
+        uploadedAt: new Date().toISOString(),
+        // updatedAt: new Date().toISOString(),
         uploader: file.uploader || null,
         webkitRelativePath: file.webkitRelativePath || file.name,
       }));

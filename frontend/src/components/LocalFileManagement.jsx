@@ -142,7 +142,10 @@ function EnhancedFileManagement({ refreshKey }) {
 
         // Update status to 'uploaded' but keep files visible until training completes
         for (const fileId of fileIds) {
-          await fileHandler.updateFileStatus(fileId, 'uploaded', { uploadID });
+          await fileHandler.updateFileStatus(fileId, 'uploaded', { 
+            uploadID,
+            uploadedAt: new Date().toISOString() // Set server upload time
+          });
         }
         
         // Refresh to show updated status
@@ -275,20 +278,15 @@ function EnhancedFileManagement({ refreshKey }) {
         isDownloadable: true
       });
     } else if (existingFile.status === 'processing' && (serverFile.status === 'trained' || !serverFile.status)) {
-      // Local file is processing and server file is trained - replace local with server
+      // Local file is processing and server file is trained - update local status but keep the file
       const index = allFiles.findIndex(f => f === existingFile);
       if (index !== -1) {
+        // Update the existing local file status to trained instead of replacing with server file
         allFiles[index] = {
-          ...serverFile,
-          source: 'server',
+          ...existingFile,
           status: 'trained',
-          type: serverFile.type && serverFile.type.startsWith('.') ? serverFile.type : '.' + (serverFile.type || '').toLowerCase(),
-          fileExtension: serverFile.type && serverFile.type.startsWith('.') ? serverFile.type : '.' + (serverFile.type || '').toLowerCase(),
-          isDownloadable: true
+          trainedAt: new Date().toISOString()
         };
-        
-        // Remove the local file from storage since it's now trained on server
-        fileHandler.removeFiles([existingFile.id]).catch(console.error);
       }
     }
   });
@@ -326,14 +324,32 @@ function EnhancedFileManagement({ refreshKey }) {
 
     // Date filters
     if (createdFrom) {
-      const createdDate = new Date(file.created_at);
+      // For local files, use uploadedAt (server upload time) or createdAt (local creation time)
+      // For server files, use created_at
+      let createdDateValue;
+      if (file.source === 'local') {
+        createdDateValue = file.uploadedAt || file.createdAt;
+      } else {
+        createdDateValue = file.created_at;
+      }
+      const createdDate = new Date(createdDateValue);
       const fromDate = new Date(createdFrom + "T00:00:00");
       const toDate = createdTo ? new Date(createdTo + "T23:59:59") : new Date();
       if (createdDate < fromDate || createdDate > toDate) return false;
     }
 
     if (modifiedFrom) {
-      const modifiedDate = new Date(file.updated_at);
+      // Always use lastModified if available (original file modification date from computer)
+      // Only fallback to server updated_at if no original modification date exists
+      let modifiedDateValue;
+      if (file.lastModified) {
+        modifiedDateValue = typeof file.lastModified === 'number' ? 
+          new Date(file.lastModified).toISOString() : 
+          file.lastModified;
+      } else {
+        modifiedDateValue = file.updated_at;
+      }
+      const modifiedDate = new Date(modifiedDateValue);
       const fromDate = new Date(modifiedFrom + "T00:00:00");
       const toDate = modifiedTo ? new Date(modifiedTo + "T23:59:59") : new Date();
       if (modifiedDate < fromDate || modifiedDate > toDate) return false;
@@ -514,12 +530,17 @@ function EnhancedFileManagement({ refreshKey }) {
                   className="border-b border-slate-700 hover:bg-slate-800 text-sm md:text-base"
                 >
                   <td className="py-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedFiles.includes(file.id)}
-                      onChange={(e) => handleFileSelect(file.id, e.target.checked)}
-                      className="cursor-pointer"
-                    />
+                    {file.status !== 'trained' ? (
+                      <input  
+                        type="checkbox"
+                        checked={selectedFiles.includes(file.id)}
+                        onChange={(e) => handleFileSelect(file.id, e.target.checked)}
+                        className="cursor-pointer"
+                      />
+                    ) : (
+                      // Empty space for trained files to maintain table alignment
+                      <div className="w-4 h-4"></div>
+                    )}
                   </td>
                   <td className="py-2 flex items-center gap-2">
                     <img
@@ -547,8 +568,23 @@ function EnhancedFileManagement({ refreshKey }) {
                       )}
                     </div>
                   </td>
-                  <td className="pr-2">{formatDate(file.created_at)}</td>
-                  <td className="pr-2">{formatDate(file.updated_at)}</td>
+                  {/* Date Created: Shows when file was uploaded to server (uploadedAt) or added to dashboard (createdAt) */}
+                  <td className="pr-2">{
+                    formatDate(
+                      file.source === 'local' ? 
+                        (file.uploadedAt || file.createdAt) : // Show server upload time if available, otherwise local creation time
+                        file.created_at // Server files use their created_at
+                    )
+                  }</td>
+                  {/* Date Modified: Always shows the original file modification date from local computer */}
+                  <td className="pr-2">{
+                    formatDate(
+                      // Priority: use original lastModified from local computer if available
+                      file.lastModified ? 
+                        (typeof file.lastModified === 'number' ? new Date(file.lastModified).toISOString() : file.lastModified) : 
+                        file.updated_at // Only fallback to server updated_at if no original modification date
+                    )
+                  }</td>
                   <td className="pr-2">{file.admin?.name || file.admin || 'Unknown'}</td>
                   <td className="text-center space-x-2">
                     {file.source === 'local' && file.status === 'pending' && (
