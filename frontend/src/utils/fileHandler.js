@@ -16,13 +16,21 @@ const getFileExtension = (filename) => {
   return lastDotIndex !== -1 ? filename.substring(lastDotIndex).toLowerCase() : '';
 };
 
-// Calculate file hash (simple implementation)
-const calculateFileHash = async (file) => {
-  const buffer = await file.arrayBuffer();
-  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
+// Calculate file hash (simple implementation using file properties)
+const calculateFileHash = (file) => {
+  // Create a string from file properties
+  const fileString = `${file.name}_${file.size}_${file.lastModified}_${file.type}`;
+  
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < fileString.length; i++) {
+    const char = fileString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  // Return as hex string
+  return Math.abs(hash).toString(16);
 };
 
 export const fileHandler = {
@@ -51,7 +59,7 @@ export const fileHandler = {
         }
 
         const fileId = generateFileId();
-        const hash = await calculateFileHash(file);
+        const hash = calculateFileHash(file);
         
         // Create file metadata
         const fileMetadata = {
