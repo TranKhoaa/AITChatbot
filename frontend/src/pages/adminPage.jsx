@@ -92,7 +92,7 @@ const AdminPage = () => {
           ref={fileInputRef}
           type="file"
           multiple
-          accept=".pdf,.doc,.docx,.xls,.xlsx"
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
           onChange={handleFileSelect}
           style={{ display: 'none' }}
         />
@@ -101,7 +101,7 @@ const AdminPage = () => {
           type="file"
           webkitdirectory=""
           multiple
-          accept=".pdf,.doc,.docx,.xls,.xlsx"
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
           onChange={handleFolderSelect}
           style={{ display: 'none' }}
         />
@@ -121,7 +121,7 @@ const AdminPage = () => {
             <UploadFiles
               onClose={() => setIsUploadOpen(false)}
             />
-          )}
+          )} 
           {isSettingsOpen && (
             <SettingsModal onClose={() => setIsSettingsOpen(false)} />
           )}

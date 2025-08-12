@@ -13,6 +13,7 @@ from src.file.utils import (
     read_docx_file,
     read_pdf_file,
     read_excel_file,
+    read_txt_file,
     chunk_text,
     vector_embedding_chunks,
 )
@@ -109,11 +110,19 @@ def process_files(
                     elif extension == ".pdf":
                         text = read_pdf_file(full_path)
                         chunks = chunk_text(text)
+                    elif extension == ".txt":
+                        text = read_txt_file(full_path)
+                        chunks = chunk_text(text)
                     elif extension in [".xls", ".xlsx"]:
-                        rows = read_excel_file(full_path)
-                        if not rows:
-                            raise Exception(f"No valid rows found in {filename}")
-                        chunks = chunk_text("\n".join(rows))
+                        # logger.info(f"Processing Excel file: {filename}")
+                        try:
+                            chunks = read_excel_file(full_path)
+                            # logger.info(f"Excel chunks extracted: {len(chunks) if chunks else 0} chunks")
+                            if not chunks:
+                                raise Exception(f"No valid chunks found in Excel file {filename}. The file may be empty or contain no readable data.")
+                        except Exception as excel_error:
+                            # logger.error(f"Error processing Excel file {filename}: {str(excel_error)}")
+                            raise Exception(f"Failed to process Excel file {filename}: {str(excel_error)}")     
                     else:
                         raise Exception(f"Unsupported file type: {extension}")
                     

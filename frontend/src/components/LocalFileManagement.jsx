@@ -3,6 +3,7 @@ import filterIcon from "../assets/filter_icon.svg";
 import wordIcon from "../assets/word_icon.svg";
 import excelIcon from "../assets/excel_icon.svg";
 import pdfIcon from "../assets/pdf_icon.svg";
+import fileIcon from "../assets/file_icon.svg";
 import ReactPaginate from "react-paginate";
 import axiosInstance from "../api/axiosInstance";
 import { AiOutlineDownload, AiOutlineDelete, AiOutlineUpload, AiOutlineEye, AiOutlineLoading3Quarters } from "react-icons/ai";
@@ -29,6 +30,8 @@ function EnhancedFileManagement({ refreshKey }) {
         ext = '.xlsx';
       } else if (type.includes('pdf')) {
         ext = '.pdf';
+      } else if (type.includes('text/plain')) {
+        ext = '.txt';
       } else if (type.startsWith('.')) {
         ext = type;
       }
@@ -40,6 +43,7 @@ function EnhancedFileManagement({ refreshKey }) {
       case ".xls":
       case ".xlsx": return excelIcon;
       case ".pdf": return pdfIcon;
+      case ".txt": return fileIcon;
       default: return "";
     }
   };
@@ -65,7 +69,7 @@ function EnhancedFileManagement({ refreshKey }) {
   const [createdTo, setCreatedTo] = useState("");
   const [modifiedFrom, setModifiedFrom] = useState("");
   const [modifiedTo, setModifiedTo] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all"); 
+  // const [statusFilter, setStatusFilter] = useState("all"); 
 
   // File selection for bulk operations
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -311,14 +315,14 @@ function EnhancedFileManagement({ refreshKey }) {
     }
 
     // Status filter
-    if (statusFilter !== 'all') {
-      // Handle the processing status which maps to uploaded in local storage
-      if (statusFilter === 'processing' && file.status !== 'processing' && file.status !== 'uploaded') {
-        return false;
-      } else if (statusFilter !== 'processing' && file.status !== statusFilter) {
-        return false;
-      }
-    }
+    // if (statusFilter !== 'all') {
+    //   // Handle the processing status which maps to uploaded in local storage
+    //   if (statusFilter === 'processing' && file.status !== 'processing' && file.status !== 'uploaded') {
+    //     return false;
+    //   } else if (statusFilter !== 'processing' && file.status !== statusFilter) {
+    //     return false;
+    //   }
+    // }
 
     // Date filters
     if (createdFrom) {
@@ -385,7 +389,7 @@ function EnhancedFileManagement({ refreshKey }) {
           />
         </div>
 
-        <div>
+        {/* <div>
           <label className="block mb-1">Status</label>
           <select
             className="w-full rounded bg-white text-black p-2"
@@ -399,12 +403,12 @@ function EnhancedFileManagement({ refreshKey }) {
             <option value="training">Training</option>
             <option value="trained">Trained</option>
           </select>
-        </div>
+        </div> */}
 
         <div>
           <label className="block mb-1">Type</label>
           <div className="flex flex-wrap gap-4">
-            {["docx", "xls", "pdf"].map((type) => (
+            {["docx", "xls", "pdf", "txt"].map((type) => (
               <div className="flex items-center gap-x-2" key={type}>
                 <input 
                   type="checkbox" 

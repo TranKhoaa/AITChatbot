@@ -3,6 +3,7 @@ import filterIcon from "../assets/filter_icon.svg"
 import wordIcon from "../assets/word_icon.svg"
 import excelIcon from "../assets/excel_icon.svg"
 import pdfIcon from "../assets/pdf_icon.svg"
+import fileIcon from "../assets/file_icon.svg"
 import removeIcon from "../assets/remove_icon.svg"
 import downloadIcon from "../assets/download_icon.svg"
 function FileUploading() {
@@ -16,6 +17,8 @@ function FileUploading() {
                 return excelIcon
             case "pdf":
                 return pdfIcon
+            case "txt":
+                return fileIcon
             default:
                 return ""
         }

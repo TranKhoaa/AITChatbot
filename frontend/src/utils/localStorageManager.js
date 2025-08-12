@@ -39,7 +39,7 @@ export const localStorageManager = {
         size: file.size,
         lastModified: file.lastModified,
         status: 'pending',
-        hash:  null,
+        hash:  file.hash || null,
         uploadedAt: null,
         updatedAt: new Date().toISOString(),
         uploader: file.uploader || null,
