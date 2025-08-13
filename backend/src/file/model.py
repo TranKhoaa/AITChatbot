@@ -15,8 +15,8 @@ class File(SQLModel, table=True):
         sa_column=Column(pg.UUID, nullable=False, primary_key=True, default=uuid.uuid4)
     )
 
-    name: str = Field(sa_column=Column(pg.VARCHAR, nullable=False, unique=True))
-    link: str
+    name: str = Field(sa_column=Column(pg.VARCHAR, nullable=False))
+    link: str = Field(sa_column=Column(pg.VARCHAR, nullable=False, unique=True))
     type: str
     media_type: str
     hash: str = Field(sa_column=Column(pg.VARCHAR, nullable=False, unique=True))

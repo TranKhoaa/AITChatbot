@@ -17,6 +17,7 @@ from src.file.utils import (
     chunk_text,
     vector_embedding_chunks,
 )
+import secrets
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +83,32 @@ def process_files(
                                 "status": "exists",
                                 "file_id": existing_file.id,
                             }
+                        
+                    # allow to upload file with existing name -> need to change full path to save 
+                    # if there is an existing file with the same name -> change full path
+                    select_stmt = select(File).where(File.name == filename)
+                    existing_file = await session.exec(select_stmt)
+                    existing_file = existing_file.first()
+                    if existing_file:
+                        # Generate random string-based unique filename
+                        base_path = full_path.rsplit(extension, 1)[0]  # Remove extension
+                        max_attempts = 10  # Prevent infinite loop in rare collision cases
+                        for attempt in range(max_attempts):
+                            # Generate 6-character random string (alphanumeric)
+                            random_suffix = secrets.token_urlsafe(4)[:6]  # Gets ~6 chars
+                            slug_path = f"{base_path}-{random_suffix}{extension}"
+                            
+                            # Check if this path already exists in database
+                            check_stmt = select(File).where(File.link == slug_path)
+                            path_exists = await session.exec(check_stmt)
+                            if not path_exists.first() and not os.path.exists(slug_path):
+                                full_path = slug_path
+                                break
+                        else:
+                            # Fallback if all attempts failed (extremely unlikely)
+                            import time
+                            timestamp_suffix = str(int(time.time()))[-6:]
+                            full_path = f"{base_path}-{timestamp_suffix}{extension}"
 
                     # save metadata
                     file_metadata = File(
@@ -155,16 +182,18 @@ def process_files(
                 except Exception as e:
                     logger.error(f"Failed to process {filename}: {str(e)}")
                     await session.rollback()
+                    if os.path.exists(full_path):
+                        os.remove(full_path)
 
-                    # database rollback but the file is retained -> do not delete in 'upload'
-                    select_stmt = select(File).where(
-                        File.hash == hash or File.name == filename
-                    )
-                    existing_file = await session.exec(select_stmt)
-                    existing_file = existing_file.first()
-                    if not existing_file:
-                        if os.path.exists(full_path):
-                            os.remove(full_path)
+                    # # database rollback but the file is retained -> do not delete in 'upload'
+                    # select_stmt = select(File).where(
+                    #     File.hash == hash or File.name == filename
+                    # )
+                    # existing_file = await session.exec(select_stmt)
+                    # existing_file = existing_file.first()
+                    # if not existing_file:
+                    #     if os.path.exists(full_path):
+                    #         os.remove(full_path)
 
                     return {
                         "filename": filename,
