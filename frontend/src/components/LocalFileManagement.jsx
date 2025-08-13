@@ -216,6 +216,31 @@ function EnhancedFileManagement({ refreshKey }) {
       if (res.status === 200 || res.status === 204) {
         toast.success("File deleted successfully!");
         dispatch(fetchFiles());
+        
+        // Also delete from local storage if the file exists there
+        try {
+          // Find the server file to get its hash/name for matching with local files
+          const serverFileToDelete = serverFiles.find(f => f.id === fileId);
+          if (serverFileToDelete) {
+            // Get all pending files to find matching local file
+            const pendingFiles = await fileHandler.getPendingFiles();
+            const matchingLocalFiles = pendingFiles.filter(localFile => 
+              localFile.hash === serverFileToDelete.hash || 
+              localFile.name === serverFileToDelete.name
+            );
+            
+            if (matchingLocalFiles.length > 0) {
+              const localFileIds = matchingLocalFiles.map(f => f.id);
+              await fileHandler.removeFiles(localFileIds);
+              console.log(`Deleted ${matchingLocalFiles.length} matching files from local storage`);
+            }
+          }
+        } catch (localError) {
+          console.warn('Could not delete from local storage:', localError);
+          // Don't show error to user as server deletion was successful
+        }
+        
+        setRefreshTrigger(prev => prev + 1);
       } else {
         toast.error("Cannot delete file!");
       }

@@ -1,25 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
-// import SignUpPage from "./pages/SignUpPage";
-// import AdminPage from "./pages/adminPage";
-// import ChatPage from "./pages/chatPage";
-// import Settings from "./components/Settings";
-// import { useState, useEffect, useRef } from "react";
-// import { ToastContainer } from "react-toastify";
-// import { Provider, useSelector, useDispatch } from "react-redux";
-// import store from "./app/store";
-// import UnauthorizedPage from "./pages/UnauthorizedPage";
-// import AdminRoute from "./routes/AdminRoute";
-// import PrivateRoute from "./routes/PrivateRoute";
-// import NewChatModal from "./components/NewChatModal";
-// import { Navigate } from "react-router-dom";
-// import { toast } from "react-toastify";
-// import { fetchFiles } from "./features/filesSlice";
-// import { initializeStorage } from "./utils/storageInit";
 import { fileHandler } from "./utils/fileHandler";
 
-// Make fileHandler available globally for WebSocket handlers
 window.fileHandler = fileHandler;
 import SignUpPage from "./pages/SignUpPage";
 import AdminPage from "./pages/adminPage";
@@ -40,7 +23,7 @@ import { initializeStorage } from "./utils/storageInit";
 
 const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [storageInitialized, setStorageInitialized] = useState(false);
+  // const [storageInitialized, setStorageInitialized] = useState(false);
   const { user, token } = useSelector((state) => state.auth);
   const wsRef = useRef(null);
   const dispatch = useDispatch();
@@ -50,22 +33,22 @@ const App = () => {
   };
 
   // Initialize storage systems
-  useEffect(() => {
-    const initStorage = async () => {
-      try {
-        const success = await initializeStorage();
-        setStorageInitialized(success);
-        if (!success) {
-          console.warn('Storage initialization failed, some features may not work properly');
-        }
-      } catch (error) {
-        console.error('Critical error during storage initialization:', error);
-        setStorageInitialized(false);
-      }
-    };
+  // useEffect(() => {
+  //   const initStorage = async () => {
+  //     try {
+  //       const success = await initializeStorage();
+  //       setStorageInitialized(success);
+  //       if (!success) {
+  //         console.warn('Storage initialization failed, some features may not work properly');
+  //       }
+  //     } catch (error) {
+  //       console.error('Critical error during storage initialization:', error);
+  //       setStorageInitialized(false);
+  //     }
+  //   };
 
-    initStorage();
-  }, []);
+  //   initStorage();
+  // }, []);
 
   useEffect(() => {
     if (user?.role === "admin" && token) {

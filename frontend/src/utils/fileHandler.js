@@ -45,6 +45,9 @@ export const fileHandler = {
       "text/plain",
     ];
 
+    // Define allowed extensions for text/plain files
+    const allowedTextExtensions = ['.txt'];
+
     try {
       // Initialize IndexedDB if not already done
       await indexedDBManager.init();
@@ -54,8 +57,17 @@ export const fileHandler = {
 
       for (const file of selectedFiles) {
         if (!allowedTypes.includes(file.type)) {
-          console.warn(`Skipping unsupported file type: ${file.type}`);
+          // console.warn(`Skipping unsupported file type: ${file.type}`);
           continue;
+        }
+
+        // Additional check for text/plain files - only allow .txt extension
+        if (file.type === "text/plain") {
+          const fileExtension = getFileExtension(file.name);
+          if (!allowedTextExtensions.includes(fileExtension)) {
+            // console.warn(`Skipping text file with unsupported extension: ${file.name} (${fileExtension})`);
+            continue;
+          }
         }
 
         const fileId = generateFileId();
