@@ -119,13 +119,17 @@ def process_files(
                             chunks = read_excel_file(full_path)
                             # logger.info(f"Excel chunks extracted: {len(chunks) if chunks else 0} chunks")
                             if not chunks:
-                                raise Exception(f"No valid chunks found in Excel file {filename}. The file may be empty or contain no readable data.")
+                                raise Exception(
+                                    f"No valid chunks found in Excel file {filename}. The file may be empty or contain no readable data."
+                                )
                         except Exception as excel_error:
                             # logger.error(f"Error processing Excel file {filename}: {str(excel_error)}")
-                            raise Exception(f"Failed to process Excel file {filename}: {str(excel_error)}")     
+                            raise Exception(
+                                f"Failed to process Excel file {filename}: {str(excel_error)}"
+                            )
                     else:
                         raise Exception(f"Unsupported file type: {extension}")
-                    
+
                     if not chunks:
                         raise Exception(f"No valid chunks extracted from {filename}")
                     embeddings = vector_embedding_chunks(chunks)
@@ -150,9 +154,18 @@ def process_files(
 
                 except Exception as e:
                     logger.error(f"Failed to process {filename}: {str(e)}")
-                    if os.path.exists(full_path):
-                        os.remove(full_path)
                     await session.rollback()
+
+                    # database rollback but the file is retained -> do not delete in 'upload'
+                    select_stmt = select(File).where(
+                        File.hash == hash or File.name == filename
+                    )
+                    existing_file = await session.exec(select_stmt)
+                    existing_file = existing_file.first()
+                    if not existing_file:
+                        if os.path.exists(full_path):
+                            os.remove(full_path)
+
                     return {
                         "filename": filename,
                         "status": "failed",
