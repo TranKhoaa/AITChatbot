@@ -102,7 +102,7 @@ const App = () => {
         } else if (message.event === "processing_error") {
           if (toastId) {
             toast.update(toastId, {
-              render: `Processing failed: ${message.error}`,
+              render: `Processing failed: File already existed`,
               type: "error",
               isLoading: false,
               autoClose: 5000,
@@ -111,7 +111,7 @@ const App = () => {
             delete toastMap[uploadID];
             localStorage.setItem("uploadToastMap", JSON.stringify(toastMap));
           } else {
-            toast.error(`Processing error: ${message.error}`);
+            toast.error(`Processing error: File already existed`);
           }
         }
       };

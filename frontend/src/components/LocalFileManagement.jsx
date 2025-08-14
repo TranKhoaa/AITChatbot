@@ -208,39 +208,32 @@ function EnhancedFileManagement({ refreshKey }) {
   };
 
   // Handle server file deletion
-  const handleDeleteServerFile = async (fileId) => {
+  const handleDeleteServerFile = async (fileId, fileName, filePath) => {
+    console.log('=== DEBUG: handleDeleteServerFile ===');
+    console.log('fileId:', fileId);
+    console.log('fileName:', fileName);
+    console.log('filePath:', filePath);
+    
     if (!window.confirm("Are you sure you want to delete this file from server?")) return;
 
     try {
       const res = await axiosInstance.delete(`admin/file/${fileId}`);
       if (res.status === 200 || res.status === 204) {
         toast.success("File deleted successfully!");
-        dispatch(fetchFiles());
         
-        // Also delete from local storage if the file exists there
-        try {
-          // Find the server file to get its hash/name for matching with local files
-          const serverFileToDelete = serverFiles.find(f => f.id === fileId);
-          if (serverFileToDelete) {
-            // Get all pending files to find matching local file
-            const pendingFiles = await fileHandler.getPendingFiles();
-            const matchingLocalFiles = pendingFiles.filter(localFile => 
-              localFile.hash === serverFileToDelete.hash || 
-              localFile.name === serverFileToDelete.name
-            );
-            
-            if (matchingLocalFiles.length > 0) {
-              const localFileIds = matchingLocalFiles.map(f => f.id);
-              await fileHandler.removeFiles(localFileIds);
-              console.log(`Deleted ${matchingLocalFiles.length} matching files from local storage`);
-            }
+        // Also remove corresponding files from local storage and IndexedDB
+        if (fileName) {
+          console.log('Calling removeFilesByNameAndPath with:', { fileName, filePath });
+          const removedCount = await fileHandler.removeFilesByNameAndPath(fileName, filePath || fileName);
+          if (removedCount > 0) {
+            console.log(`Also removed ${removedCount} corresponding local file(s)`);
+          } else {
+            console.log('No local files were removed');
           }
-        } catch (localError) {
-          console.warn('Could not delete from local storage:', localError);
-          // Don't show error to user as server deletion was successful
         }
         
-        setRefreshTrigger(prev => prev + 1);
+        dispatch(fetchFiles());
+        setRefreshTrigger(prev => prev + 1); // Refresh local files display
       } else {
         toast.error("Cannot delete file!");
       }
@@ -649,7 +642,7 @@ function EnhancedFileManagement({ refreshKey }) {
                     {file.source === 'server' && (
                       <button
                         className="cursor-pointer hover:text-red-400 text-white"
-                        onClick={() => handleDeleteServerFile(file.id)}
+                        onClick={() => handleDeleteServerFile(file.id, file.name, file.link)}
                         title="Delete from server"
                       >
                         <AiOutlineDelete className="h-5 w-5" />

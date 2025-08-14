@@ -229,6 +229,102 @@ export const fileHandler = {
     }
   },
 
+  // Remove files from local storage and IndexedDB by filename and path (when server file is deleted)
+  removeFilesByNameAndPath: async (fileName, filePath) => {
+    try {
+      console.log('=== DEBUG: removeFilesByNameAndPath ===');
+      console.log('Input fileName:', fileName);
+      console.log('Input filePath:', filePath);
+      
+      // Find all local files with matching name and path
+      const allFiles = await indexedDBManager.getAllFiles();
+      console.log('Total local files in IndexedDB:', allFiles.length);
+      
+      // Log all local files for debugging
+      allFiles.forEach((file, index) => {
+        console.log(`Local file ${index}:`, {
+          id: file.id,
+          name: file.name,
+          webkitRelativePath: file.webkitRelativePath,
+          status: file.status
+        });
+      });
+      
+      // Remove /uploads/ prefix from server file path to match local storage format
+      let normalizedServerPath = filePath;
+      if (filePath) {
+        // Handle various upload path formats
+        if (filePath.startsWith('./uploads/')) {
+          normalizedServerPath = filePath.replace('./uploads/', '');
+        } else if (filePath.startsWith('./uploads\\')) {
+          normalizedServerPath = filePath.replace('./uploads\\', '');
+        } else if (filePath.startsWith('/uploads/')) {
+          normalizedServerPath = filePath.replace('/uploads/', '');
+        } else if (filePath.startsWith('uploads/')) {
+          normalizedServerPath = filePath.replace('uploads/', '');
+        } else if (filePath.startsWith('uploads\\')) {
+          normalizedServerPath = filePath.replace('uploads\\', '');
+        }
+        
+        // Normalize path separators (convert backslashes to forward slashes)
+        normalizedServerPath = normalizedServerPath.replace(/\\/g, '/');
+      }
+      
+      console.log('Normalized server path:', normalizedServerPath);
+      
+      // Match by filename and webkitRelativePath/name
+      const matchingFiles = allFiles.filter(file => {
+        const nameMatches = file.name === fileName;
+        console.log(`Checking file ${file.name}: nameMatches = ${nameMatches}`);
+        
+        // Check various path matching scenarios
+        const pathMatch1 = file.webkitRelativePath === normalizedServerPath;
+        const pathMatch2 = file.webkitRelativePath === fileName && normalizedServerPath === fileName;
+        const pathMatch3 = file.name === normalizedServerPath;
+        const pathMatch4 = file.webkitRelativePath === file.name && normalizedServerPath === fileName;
+        
+        console.log(`  Path matches: ${pathMatch1} || ${pathMatch2} || ${pathMatch3} || ${pathMatch4}`);
+        
+        const pathMatches = pathMatch1 || pathMatch2 || pathMatch3 || pathMatch4;
+        
+        console.log(`  Final match: ${nameMatches && pathMatches}`);
+        return nameMatches && pathMatches;
+      });
+      
+      console.log('Matching files found:', matchingFiles.length);
+      matchingFiles.forEach(file => {
+        console.log('Matched file:', {
+          id: file.id,
+          name: file.name,
+          webkitRelativePath: file.webkitRelativePath
+        });
+      });
+      
+      if (matchingFiles.length > 0) {
+        const fileIds = matchingFiles.map(file => file.id);
+        console.log('File IDs to remove:', fileIds);
+        
+        // Remove from localStorage
+        const localStorageResult = localStorageManager.removePendingFiles(fileIds);
+        console.log('LocalStorage removal result:', localStorageResult);
+        
+        // Remove from IndexedDB
+        const indexedDBResult = await indexedDBManager.deleteFiles(fileIds);
+        console.log('IndexedDB removal result:', indexedDBResult);
+        
+        console.log(`Successfully removed ${matchingFiles.length} local files matching name: ${fileName}`);
+        return matchingFiles.length;
+      } else {
+        console.log('No matching files found for deletion');
+        return 0;
+      }
+      
+    } catch (error) {
+      console.error('Error removing files by name and path:', error);
+      return 0;
+    }
+  },
+
   // Clear all pending files
   clearAllPendingFiles: async () => {
     try {

@@ -11,6 +11,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchFiles } from "../features/filesSlice";
+import { fileHandler } from "../utils/fileHandler";
 
 function FileManagement() {
   const getIconByType = (type, fileExtension = '') => {
@@ -72,13 +73,22 @@ function FileManagement() {
     }
   };
 
-  const handleDeleteFile = async (fileId) => {
+  const handleDeleteFile = async (fileId, fileName, filePath) => {
     if (!window.confirm("Are you sure you want to delete this file?")) return;
 
     try {
       const res = await axiosInstance.delete(`admin/file/${fileId}`);
       if (res.status === 200 || res.status === 204) {
         toast.success("File deleted successfully!");
+        
+        // Also remove corresponding files from local storage and IndexedDB
+        if (fileName) {
+          const removedCount = await fileHandler.removeFilesByNameAndPath(fileName, filePath || fileName);
+          if (removedCount > 0) {
+            console.log(`Also removed ${removedCount} corresponding local file(s)`);
+          }
+        }
+        
         dispatch(fetchFiles());
       } else {
         toast.error("Cannot delete file!");
@@ -270,7 +280,7 @@ function FileManagement() {
                     </button>
                     <button
                       className="cursor-pointer hover:text-gray-400 text-white"
-                      onClick={() => handleDeleteFile(file.id)}
+                      onClick={() => handleDeleteFile(file.id, file.name, file.link)}
                     >
                       <AiOutlineDelete className="h-5 w-5" />
                     </button>
