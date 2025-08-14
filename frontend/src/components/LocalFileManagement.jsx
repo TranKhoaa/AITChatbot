@@ -7,8 +7,6 @@ import fileIcon from "../assets/file_icon.svg";
 import ReactPaginate from "react-paginate";
 import axiosInstance from "../api/axiosInstance";
 import { AiOutlineDownload, AiOutlineDelete, AiOutlineUpload, AiOutlineEye, AiOutlineLoading3Quarters } from "react-icons/ai";
-import { MdOutlineDriveFileRenameOutline } from "react-icons/md";
-import { FaPlus } from "react-icons/fa";
 import "react-toastify/dist/ReactToastify.css";
 import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,7 +17,7 @@ import { localStorageManager } from "../utils/localStorageManager";
 function EnhancedFileManagement({ refreshKey }) {
   const getIconByType = (type, fileExtension = '') => {
     if (!type && !fileExtension) return "";
-    
+
     // Use fileExtension if available, otherwise try to extract from type
     let ext = fileExtension;
     if (!ext && typeof type === "string") {
@@ -36,7 +34,7 @@ function EnhancedFileManagement({ refreshKey }) {
         ext = type;
       }
     }
-    
+
     switch (ext?.toLowerCase()) {
       case ".docx":
       case ".doc": return wordIcon;
@@ -69,6 +67,8 @@ function EnhancedFileManagement({ refreshKey }) {
   const [createdTo, setCreatedTo] = useState("");
   const [modifiedFrom, setModifiedFrom] = useState("");
   const [modifiedTo, setModifiedTo] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
   // const [statusFilter, setStatusFilter] = useState("all"); 
 
   // File selection for bulk operations
@@ -77,7 +77,7 @@ function EnhancedFileManagement({ refreshKey }) {
   useEffect(() => {
     // Fetch server files
     dispatch(fetchFiles());
-    
+
     // Load pending files from storage
     loadPendingFiles();
 
@@ -90,7 +90,7 @@ function EnhancedFileManagement({ refreshKey }) {
     };
 
     window.addEventListener('fileManagementRefresh', handleRefresh);
-    
+
     return () => {
       window.removeEventListener('fileManagementRefresh', handleRefresh);
     };
@@ -109,7 +109,7 @@ function EnhancedFileManagement({ refreshKey }) {
   const handleUploadFiles = async (fileIds) => {
     try {
       const filesToUpload = await fileHandler.getFileDataForUpload(fileIds);
-      
+
       if (filesToUpload.length === 0) {
         toast.error('No files to upload');
         return;
@@ -142,12 +142,12 @@ function EnhancedFileManagement({ refreshKey }) {
 
         // Update status to 'uploaded' but keep files visible until training completes
         for (const fileId of fileIds) {
-          await fileHandler.updateFileStatus(fileId, 'uploaded', { 
+          await fileHandler.updateFileStatus(fileId, 'uploaded', {
             uploadID,
             uploadedAt: new Date().toISOString() // Set server upload time
           });
         }
-        
+
         // Refresh to show updated status
         setRefreshTrigger(prev => prev + 1);
       } else {
@@ -156,7 +156,7 @@ function EnhancedFileManagement({ refreshKey }) {
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Error uploading files');
-      
+
       // Revert status back to pending
       for (const fileId of fileIds) {
         await fileHandler.updateFileStatus(fileId, 'pending');
@@ -168,16 +168,16 @@ function EnhancedFileManagement({ refreshKey }) {
   // Handle file deletion from dashboard
   const handleDeleteFromDashboard = async (fileIds) => {
     const fileCount = fileIds.length;
-    const confirmMessage = fileCount === 1 
-      ? "Are you sure you want to remove this file from the dashboard?" 
+    const confirmMessage = fileCount === 1
+      ? "Are you sure you want to remove this file from the dashboard?"
       : `Are you sure you want to remove ${fileCount} files from the dashboard?`;
-    
+
     if (!window.confirm(confirmMessage)) return;
 
     try {
       await fileHandler.removeFiles(fileIds);
-      const successMessage = fileCount === 1 
-        ? 'File removed from dashboard' 
+      const successMessage = fileCount === 1
+        ? 'File removed from dashboard'
         : `${fileCount} files removed from dashboard`;
       toast.success(successMessage);
       setRefreshTrigger(prev => prev + 1);
@@ -240,10 +240,10 @@ function EnhancedFileManagement({ refreshKey }) {
 
   // Combine server files and pending files, avoiding duplicates
   const allFiles = [];
-  
+
   // Create a map to track files by hash for duplicate detection
   const filesByHash = new Map();
-  
+
   // First pass: collect all local files and mark their hashes
   pendingFiles.forEach(file => {
     if (['pending', 'uploading', 'uploaded'].includes(file.status)) {
@@ -254,7 +254,7 @@ function EnhancedFileManagement({ refreshKey }) {
         status: file.status === 'uploaded' ? 'processing' : file.status,
         isDownloadable: false
       };
-      
+
       // Always add local files and mark their hashes
       allFiles.push(processedFile);
       if (file.hash) {
@@ -262,11 +262,11 @@ function EnhancedFileManagement({ refreshKey }) {
       }
     }
   });
-  
+
   // Second pass: add server files only if they don't conflict with local files
   serverFiles.forEach(serverFile => {
     const existingFile = filesByHash.get(serverFile.hash);
-    
+
     if (!existingFile) {
       // No local version exists, add server file
       allFiles.push({
@@ -321,6 +321,9 @@ function EnhancedFileManagement({ refreshKey }) {
     //     return false;
     //   }
     // }
+    if (statusFilter !== 'all' && statusFilter && file.status?.toLowerCase() !== statusFilter.toLowerCase()) {
+      return false;
+    }
 
     // Date filters
     if (createdFrom) {
@@ -370,8 +373,8 @@ function EnhancedFileManagement({ refreshKey }) {
 
   // Handle file selection for bulk operations
   const handleFileSelect = (fileId, isChecked) => {
-    setSelectedFiles(prev => 
-      isChecked 
+    setSelectedFiles(prev =>
+      isChecked
         ? [...prev, fileId]
         : prev.filter(id => id !== fileId)
     );
@@ -382,7 +385,7 @@ function EnhancedFileManagement({ refreshKey }) {
   };
 
   // Get pending files for bulk upload (only pending, not uploading)
-  const selectedPendingFiles = selectedFiles.filter(fileId => 
+  const selectedPendingFiles = selectedFiles.filter(fileId =>
     pendingFiles.some(file => file.id === fileId && file.status === 'pending')
   );
 
@@ -413,7 +416,7 @@ function EnhancedFileManagement({ refreshKey }) {
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="all">All</option>
-            <option value="pending">Pending Upload</option>
+            <option value="pending">Pending</option>
             <option value="uploading">Uploading</option>
             <option value="processing">Processing</option>
             <option value="training">Training</option>
@@ -426,9 +429,9 @@ function EnhancedFileManagement({ refreshKey }) {
           <div className="flex flex-wrap gap-4">
             {["docx", "xls", "pdf", "txt"].map((type) => (
               <div className="flex items-center gap-x-2" key={type}>
-                <input 
-                  type="checkbox" 
-                  className="cursor-pointer accent-green-500 h-4 w-4" 
+                <input
+                  type="checkbox"
+                  className="cursor-pointer accent-green-500 h-4 w-4"
                   onChange={(e) => handleTypeChange(type)}
                 />
                 <label>{type}</label>
@@ -553,14 +556,13 @@ function EnhancedFileManagement({ refreshKey }) {
                   <td className="pr-2">{file.fileExtension || file.type}</td>
                   <td className="pr-2">
                     <div className="flex items-center gap-1">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        file.status === 'pending' ? 'bg-yellow-600' :
-                        file.status === 'uploading' ? 'bg-blue-600' :
-                        file.status === 'uploaded' || file.status === 'processing' ? 'bg-green-600' :
-                        file.status === 'training' ? 'bg-orange-600' :
-                        file.status === 'trained' ? 'bg-purple-600' :
-                        'bg-gray-600'
-                      }`}>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${file.status === 'pending' ? 'bg-yellow-600' :
+                          file.status === 'uploading' ? 'bg-blue-600' :
+                            file.status === 'uploaded' || file.status === 'processing' ? 'bg-green-600' :
+                              file.status === 'training' ? 'bg-orange-600' :
+                                file.status === 'trained' ? 'bg-purple-600' :
+                                  'bg-gray-600'
+                        }`}>
                         {file.status === 'uploaded' ? 'processing' : file.status || 'unknown'}
                       </span>
                       {(file.status === 'training' || file.status === 'uploading' || file.status === 'uploaded') && (
@@ -605,13 +607,13 @@ function EnhancedFileManagement({ refreshKey }) {
                         </button>
                       </>
                     )}
-                    
+
                     {file.source === 'local' && (file.status === 'uploading' || file.status === 'uploaded' || file.status === 'processing') && (
                       <span className="text-blue-400" title="Processing...">
                         <AiOutlineLoading3Quarters className="h-5 w-5 animate-spin" />
                       </span>
                     )}
-                    
+
                     {file.isDownloadable && file.source === 'server' && (
                       <button
                         className="cursor-pointer hover:text-green-400 text-white"
