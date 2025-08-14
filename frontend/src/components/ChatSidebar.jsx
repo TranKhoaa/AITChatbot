@@ -52,6 +52,7 @@ const ChatSidebar = ({ isSidebarOpen, chats, setChats }) => {
                 setChats((prev) => prev.filter((chat) => chat.chat_id !== chat_id));
                 toast.success("Chat deleted successfully!");
                 fetchChats();
+                navigate("/chat");
             } else {
                 toast.error("Cannot delete chat!");
             }
