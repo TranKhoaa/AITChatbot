@@ -3,6 +3,7 @@ import filterIcon from "../assets/filter_icon.svg";
 import wordIcon from "../assets/word_icon.svg";
 import excelIcon from "../assets/excel_icon.svg";
 import pdfIcon from "../assets/pdf_icon.svg";
+import fileIcon from "../assets/file_icon.svg";
 import ReactPaginate from "react-paginate";
 import axiosInstance from "../api/axiosInstance";
 import { AiOutlineDownload, AiOutlineDelete } from "react-icons/ai";
@@ -25,6 +26,8 @@ function FileManagement() {
         ext = '.xlsx';
       } else if (type.includes('pdf')) {
         ext = '.pdf';
+      } else if (type.includes('text/plain')) {
+        ext = '.txt';
       } else if (type.startsWith('.')) {
         ext = type;
       }
@@ -36,6 +39,7 @@ function FileManagement() {
       case ".xls":
       case ".xlsx": return excelIcon;
       case ".pdf": return pdfIcon;
+      case ".txt": return fileIcon;
       default: return "";
     }
   };
@@ -176,7 +180,7 @@ function FileManagement() {
         <div>
           <label className="block mb-1">Type</label>
           <div className="flex flex-wrap gap-4">
-            {["docx", "xls", "pdf"].map((type) => (
+            {["docx", "xls", "pdf", "txt"].map((type) => (
               <div className="flex items-center gap-x-2" key={type}>
                 <input type="checkbox" className="cursor-pointer accent-green-500 h-4 w-4" 
                 onChange={(e) => handleTypeChange(type)}

@@ -16,13 +16,21 @@ const getFileExtension = (filename) => {
   return lastDotIndex !== -1 ? filename.substring(lastDotIndex).toLowerCase() : '';
 };
 
-// Calculate file hash (simple implementation)
-const calculateFileHash = async (file) => {
-  const buffer = await file.arrayBuffer();
-  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
+// Calculate file hash (simple implementation using file properties)
+const calculateFileHash = (file) => {
+  // Create a string from file properties
+  const fileString = `${file.name}_${file.size}_${file.lastModified}_${file.type}`;
+  
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < fileString.length; i++) {
+    const char = fileString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  // Return as hex string
+  return Math.abs(hash).toString(16);
 };
 
 export const fileHandler = {
@@ -33,7 +41,8 @@ export const fileHandler = {
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "application/msword",
-      "application/vnd.ms-excel"
+      "application/vnd.ms-excel",
+      "text/plain",
     ];
 
     try {
@@ -50,7 +59,7 @@ export const fileHandler = {
         }
 
         const fileId = generateFileId();
-        const hash = await calculateFileHash(file);
+        const hash = calculateFileHash(file);
         
         // Create file metadata
         const fileMetadata = {
@@ -59,12 +68,12 @@ export const fileHandler = {
           type: file.type,
           fileExtension: getFileExtension(file.name), // Add file extension for proper icon display
           size: file.size,
-          lastModified: file.lastModified,
+          lastModified: file.lastModified, // Original file modification date from local computer
           status: 'pending',
           hash: hash,
-          uploadedAt: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          uploadedAt: null, // Will be set when file is uploaded to server
+          createdAt: new Date().toISOString(), // When file was added to local dashboard
+          updatedAt: file.lastModified, // When file metadata was last updated
           uploader: uploaderInfo,
           webkitRelativePath: file.webkitRelativePath || file.name,
         };
@@ -166,6 +175,29 @@ export const fileHandler = {
     } catch (error) {
       console.error('Error updating file status:', error);
       return false;
+    }
+  },
+
+  // Update multiple files to trained status when processing completes
+  updateFilesToTrained: async (uploadID) => {
+    try {
+      const pendingFiles = await fileHandler.getPendingFiles();
+      const filesToUpdate = pendingFiles
+        .filter(file => file.status === 'uploaded' && file.uploadID === uploadID);
+      
+      if (filesToUpdate.length > 0) {
+        for (const file of filesToUpdate) {
+          await fileHandler.updateFileStatus(file.id, 'trained', { 
+            uploadID,
+            trainedAt: new Date().toISOString() 
+          });
+        }
+        return filesToUpdate.length;
+      }
+      return 0;
+    } catch (error) {
+      console.error('Error updating files to trained status:', error);
+      return 0;
     }
   },
 

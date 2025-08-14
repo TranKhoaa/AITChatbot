@@ -9,6 +9,7 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
     Query,
+    Form,
 )
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from fastapi.responses import FileResponse
@@ -22,7 +23,7 @@ import mimetypes
 from src.file.model import File
 from sqlmodel import select
 from src.shared.schema import FileSchemaWithAdmin
-from typing import List
+from typing import List, Optional
 import uuid
 from src.file.service import process_files, FileInfoList
 from src.config import Config
@@ -51,15 +52,27 @@ async def websocket_endpoint(websocket: WebSocket, admin_id: str = Query(None)):
 
 
 async def process_files_in_background(
-    files_info_list: FileInfoList, admin_id: str, database_url: str, upload_id: str
+    files_info_list: FileInfoList, 
+    admin_id: str, 
+    database_url: str, 
+    upload_id: str,
+    retrain_file_ids: Optional[List[Optional[str]]] = None
 ):
     """
     Hàm chạy trong background để xử lý files mà không làm nghẽn API
+    Supports both new file uploads and retraining existing files
+    
+    Args:
+        retrain_file_ids: Array of file IDs (strings) where each index corresponds to files array.
+                         If None at an index, treat as new file. If UUID string, retrain that file.
     """
     import time
 
     try:
         print(f"Starting background processing for {len(files_info_list)} files...")
+        if retrain_file_ids:
+            retrain_count = sum(1 for fid in retrain_file_ids if fid is not None)
+            print(f"Retraining {retrain_count} existing files...")
         start_time = time.time()
 
         # Sử dụng ProcessPoolExecutor trong background task
@@ -67,9 +80,9 @@ async def process_files_in_background(
         with ThreadPoolExecutor() as executor:
             loop = asyncio.get_event_loop()
 
-            # Chạy process_files trong executor
+            # Chạy process_files trong executor with retrain file IDs
             result = await loop.run_in_executor(
-                executor, process_files, files_info_list, admin_id, database_url
+                executor, process_files, files_info_list, admin_id, database_url, retrain_file_ids
             )
 
         serialized_result = [
@@ -77,6 +90,8 @@ async def process_files_in_background(
                 "filename": item["filename"],
                 "status": item["status"],
                 "file_id": str(item["file_id"]) if "file_id" in item else None,
+                "is_retrain": item.get("is_retrain", False),
+                "original_file_id": str(item["original_file_id"]) if "original_file_id" in item else None,
             }
             for item in result
             if item["status"]
@@ -116,8 +131,66 @@ async def upload_files(
     background_tasks: BackgroundTasks,
     files: List[UploadFile] = Depends(validate_file),
     admin_detail: dict = Depends(AccessTokenBearerAdmin),
+    retrain_file_ids: Optional[str] = Form(None),  # JSON string array of file IDs
+    session: AsyncSession = Depends(get_session),
 ):
-    async def get_file_info(file: UploadFile):
+    # Parse retrain_file_ids if provided
+    retrain_ids_array = None
+    if retrain_file_ids:
+        try:
+            retrain_ids_array = json.loads(retrain_file_ids)
+            
+            # Validate array length matches files length
+            if len(retrain_ids_array) != len(files):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"retrain_file_ids array length ({len(retrain_ids_array)}) must match files array length ({len(files)})"
+                )
+            
+            # Extract non-null file IDs for validation
+            file_ids_to_validate = [fid for fid in retrain_ids_array if fid is not None]
+            
+            if file_ids_to_validate:
+                # Convert string UUIDs to UUID objects for validation
+                try:
+                    uuid_objects = [uuid.UUID(fid) for fid in file_ids_to_validate]
+                except ValueError as e:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Invalid UUID format in retrain_file_ids: {str(e)}"
+                    )
+                
+                # Validate that all specified file IDs exist and belong to the admin
+                statement = select(File).where(
+                    File.id.in_(uuid_objects),
+                    File.deleted == False,
+                    File.uploaded_by == admin_detail["data"]["id"]
+                )
+                existing_files = await session.exec(statement)
+                existing_file_ids = {str(file.id) for file in existing_files.all()}
+                
+                # Check if all requested file IDs exist
+                missing_ids = set(file_ids_to_validate) - existing_file_ids
+                if missing_ids:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Files not found or access denied: {missing_ids}"
+                    )
+                
+        except json.JSONDecodeError:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid JSON format for retrain_file_ids parameter"
+            )
+        except Exception as e:
+            if isinstance(e, HTTPException):
+                raise e
+            raise HTTPException(
+                status_code=400,
+                detail=f"Error processing retrain_file_ids: {str(e)}"
+            )
+
+    async def get_file_info(file: UploadFile, index: int):
         # Sanitize and construct file path
         relative_path = file.filename  # Maintain original folder structure
         safe_filepath = os.path.normpath(relative_path).replace("..", "").lstrip("/")
@@ -132,6 +205,11 @@ async def upload_files(
         )
         extension = os.path.splitext(file.filename)[1].lower()
 
+        # Check if this file is for retraining based on index
+        retrain_file_id = None
+        if retrain_ids_array and index < len(retrain_ids_array):
+            retrain_file_id = retrain_ids_array[index]
+
         return {
             "filename": safe_filename,
             "full_path": full_path,
@@ -139,9 +217,11 @@ async def upload_files(
             "content": content,
             "media_type": media_type,
             "hash": hash,
+            "upload_index": index,
+            "retrain_file_id": retrain_file_id,
         }
 
-    get_file_info_tasks = [get_file_info(file) for file in files]
+    get_file_info_tasks = [get_file_info(file, i) for i, file in enumerate(files)]
     files_info_list = await asyncio.gather(*get_file_info_tasks)
 
     admin_id = admin_detail["data"]["id"]
@@ -153,12 +233,19 @@ async def upload_files(
         admin_id,
         Config.DATABASE_URL,
         upload_id,
+        retrain_ids_array,
     )
 
+    response_message = "Files are being processed in the background. You will be notified upon completion."
+    if retrain_ids_array:
+        retrain_count = sum(1 for fid in retrain_ids_array if fid is not None)
+        response_message += f" {retrain_count} files will be retrained."
+
     return {
-        "message": "Files are being processed in the background. You will be notified upon completion.",
-        "files": [{"filename": file.filename} for file in files],
+        "message": response_message,
+        "files": [{"filename": file.filename, "upload_index": i} for i, file in enumerate(files)],
         "uploadID": upload_id,
+        "retrain_count": sum(1 for fid in retrain_ids_array if fid is not None) if retrain_ids_array else 0,
     }
 
 

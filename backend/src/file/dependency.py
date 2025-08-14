@@ -2,7 +2,7 @@ from fastapi import UploadFile, HTTPException
 from typing import List
 import os
 
-ALLOWED_EXTENSIONS = {".txt", ".pdf", ".docx", ".xlsx"}
+ALLOWED_EXTENSIONS = {".txt", ".pdf", ".docx", ".xls", ".xlsx"}
 
 
 def validate_file(files: List[UploadFile]) -> List[UploadFile]:

@@ -41,7 +41,6 @@ function Header() {
             </svg>
           </button>
         </div>
-
         <div className={` lg:flex lg:flex-row gap-x-5 
             ${isMenuOpen ? 'flex flex-col top-18 right-0 gap-y-5 p-5 items-end absolute w-full bg-black text-white border border-slate-700 ' : 'hidden'}`}>
           <select className="text-white bg-black lg:bg-white lg:text-black focus:outline-none cursor-pointer">

@@ -39,14 +39,18 @@ export const localStorageManager = {
         size: file.size,
         lastModified: file.lastModified,
         status: 'pending',
-        hash: file.hash || null,
-        uploadedAt: null,
-        updatedAt: new Date().toISOString(),
+        hash:  file.hash || null,
+        uploadedAt: new Date().toISOString(),
+        // updatedAt: new Date().toISOString(),
         uploader: file.uploader || null,
         webkitRelativePath: file.webkitRelativePath || file.name,
       }));
+
+      const data = localStorage.getItem(LOCAL_STORAGE_KEYS.PENDING_FILES);
+      const existingMetadata = data ? JSON.parse(data) : [];
+      const combinedMetadata = [...existingMetadata, ...metadata];
       
-      localStorage.setItem(LOCAL_STORAGE_KEYS.PENDING_FILES, JSON.stringify(metadata));
+      localStorage.setItem(LOCAL_STORAGE_KEYS.PENDING_FILES, JSON.stringify(combinedMetadata));
       return true;
     } catch (error) {
       console.error('Error saving pending files to localStorage:', error);

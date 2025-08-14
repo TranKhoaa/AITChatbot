@@ -313,9 +313,18 @@ function EnhancedFileManagement({ refreshKey }) {
     }
 
     // Status filter
+    // if (statusFilter !== 'all') {
+    //   // Handle the processing status which maps to uploaded in local storage
+    //   if (statusFilter === 'processing' && file.status !== 'processing' && file.status !== 'uploaded') {
+    //     return false;
+    //   } else if (statusFilter !== 'processing' && file.status !== statusFilter) {
+    //     return false;
+    //   }
+    // }
     if (statusFilter !== 'all' && statusFilter && file.status?.toLowerCase() !== statusFilter.toLowerCase()) {
       return false;
     }
+
     // Date filters
     if (createdFrom) {
       // For local files, use uploadedAt (server upload time) or createdAt (local creation time)
@@ -337,8 +346,8 @@ function EnhancedFileManagement({ refreshKey }) {
       // Only fallback to server updated_at if no original modification date exists
       let modifiedDateValue;
       if (file.lastModified) {
-        modifiedDateValue = typeof file.lastModified === 'number' ?
-          new Date(file.lastModified).toISOString() :
+        modifiedDateValue = typeof file.lastModified === 'number' ? 
+          new Date(file.lastModified).toISOString() : 
           file.lastModified;
       } else {
         modifiedDateValue = file.updated_at;
@@ -399,7 +408,7 @@ function EnhancedFileManagement({ refreshKey }) {
           />
         </div>
 
-        <div>
+        {/* <div>
           <label className="block mb-1">Status</label>
           <select
             className="w-full rounded bg-white text-black p-2"
@@ -413,7 +422,7 @@ function EnhancedFileManagement({ refreshKey }) {
             <option value="training">Training</option>
             <option value="trained">Trained</option>
           </select>
-        </div>
+        </div> */}
 
         <div>
           <label className="block mb-1">Type</label>
@@ -525,7 +534,7 @@ function EnhancedFileManagement({ refreshKey }) {
                 >
                   <td className="py-2">
                     {file.status !== 'trained' ? (
-                      <input
+                      <input  
                         type="checkbox"
                         checked={selectedFiles.includes(file.id)}
                         onChange={(e) => handleFileSelect(file.id, e.target.checked)}
@@ -564,7 +573,7 @@ function EnhancedFileManagement({ refreshKey }) {
                   {/* Date Created: Shows when file was uploaded to server (uploadedAt) or added to dashboard (createdAt) */}
                   <td className="pr-2">{
                     formatDate(
-                      file.source === 'local' ?
+                      file.source === 'local' ? 
                         (file.uploadedAt || file.createdAt) : // Show server upload time if available, otherwise local creation time
                         file.created_at // Server files use their created_at
                     )
@@ -573,8 +582,8 @@ function EnhancedFileManagement({ refreshKey }) {
                   <td className="pr-2">{
                     formatDate(
                       // Priority: use original lastModified from local computer if available
-                      file.lastModified ?
-                        (typeof file.lastModified === 'number' ? new Date(file.lastModified).toISOString() : file.lastModified) :
+                      file.lastModified ? 
+                        (typeof file.lastModified === 'number' ? new Date(file.lastModified).toISOString() : file.lastModified) : 
                         file.updated_at // Only fallback to server updated_at if no original modification date
                     )
                   }</td>
