@@ -44,8 +44,9 @@ app.include_router(file_router, prefix=f"/api/{version}/admin/file", tags=["file
 app.include_router(chat_router, prefix=f"/api/{version}/user/chat", tags=["chat"])
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str, request: Request):
-    # Nếu là yêu cầu file tĩnh (CSS, JS, hình ảnh), thì trả 404 chứ không nuốt
-    if "." in full_path:
-        raise StarletteHTTPException(status_code=404)
+    file_path = os.path.join("static", full_path)
+    if os.path.exists(file_path):  # nếu file tồn tại thì trả về file
+        return FileResponse(file_path)
     return FileResponse(os.path.join("static", "index.html"))
+
 
